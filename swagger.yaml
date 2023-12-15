@@ -1,0 +1,953 @@
+openapi: 3.1.0
+info:
+  title: REC Sizing API
+  description: REST API for sizing a REC/CEC.
+  version: 0.1.0
+paths:
+  /sizing:
+    post:
+      tags:
+        - Calculate Sizing
+      summary: Compute Sizing
+      operationId: compute_sizing_sizing_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SizingInputs'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /get_sizing/{order_id}:
+    get:
+      tags:
+        - Retrieve Sizing Results
+      summary: Get Sizing Results
+      description: Endpoint for retrieving a request results', provided the order ID.
+      operationId: get_prices_get_sizing__order_id__get
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Order Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderProcessed'
+        '202':
+          description: Order found but not yet processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderNotProcessed'
+        '404':
+          description: Order not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderNotFound'
+        '412':
+          description: One or more member IDs not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberIDNotFound'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    AcceptedResponse:
+      properties:
+        message:
+          type: string
+          title: Message
+          examples:
+            - Processing has started. Use the order ID for status updates.
+        order_id:
+          type: string
+          title: Order Id
+          description: Order identifier for the request. <br />Request results via REST API can only be retrieved by specifying this identifier.
+          examples:
+            - iaMiULXA9BktPUu2b_PwTtycCSNe0_wYpPt9muwlEtgL49GDg-kggSktAjtu
+      type: object
+      required:
+        - message
+        - order_id
+      title: AcceptedResponse
+    AllocatedEnergy:
+      properties:
+        sending_cpe_id:
+          type: string
+          title: Sending Cpe Id
+          description: The string that identifies the CPE of the community that allocates the energy
+          examples:
+            - Prosumer#1
+        receiving_cpe_id:
+          type: string
+          title: Receiving Cpe Id
+          description: The string that identifies the CPE of the community that receives the energy allocated
+          examples:
+            - Prosumer#2
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Energy allocated from sending_cpe_id to the receiving_cpe_id. In kWh.
+      type: object
+      required:
+        - sending_cpe_id
+        - receiving_cpe_id
+        - datetime
+        - value
+      title: AllocatedEnergy
+    BatteryCharge:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Positive if charging, Negative if discharging. In kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: BatteryCharge
+    BatteryFeaturesId:
+      type: string
+      enum:
+        - Luna2000
+        - Luna3000
+      title: BatteryFeaturesId
+    BilateralEnergy:
+      properties:
+        sending_cpe_id:
+          type: string
+          title: Sending Cpe Id
+          description: The string that identifies the CPE of the community that sells the energy
+          examples:
+            - Prosumer#1
+        receiving_cpe_id:
+          type: string
+          title: Receiving Cpe Id
+          description: The string that identifies the CPE of the community that buys the energy allocated
+          examples:
+            - Prosumer#2
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Energy transacted between both prosumers, in kWh.
+      type: object
+      required:
+        - sending_cpe_id
+        - receiving_cpe_id
+        - datetime
+        - value
+      title: BilateralEnergy
+    BilateralPrice:
+      properties:
+        sending_cpe_id:
+          type: string
+          title: Sending Cpe Id
+          description: The string that identifies the CPE of the community that sells the energy
+          examples:
+            - Prosumer#1
+        receiving_cpe_id:
+          type: string
+          title: Receiving Cpe Id
+          description: The string that identifies the CPE of the community that buys the energy allocated
+          examples:
+            - Prosumer#2
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Price of the energy transacted between both prosumers, in €/kWh.
+      type: object
+      required:
+        - sending_cpe_id
+        - receiving_cpe_id
+        - datetime
+        - value
+      title: BilateralPrice
+    BusinessModel:
+      type: string
+      enum:
+        - all market
+        - allocated
+      title: BusinessModel
+    ContractedPower:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Resulting maximum metered power flow, in kW.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: ContractedPower
+    Coordinate:
+      properties:
+        latitude:
+          type: number
+          maximum: 90
+          minimum: -90
+          title: Latitude
+        longitude:
+          type: number
+          maximum: 180
+          minimum: -180
+          title: Longitude
+      type: object
+      required:
+        - latitude
+        - longitude
+      title: Coordinate
+    CpeResults:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC.
+          examples:
+            - Prosumer#1
+        installed_pv_power:
+          type: number
+          title: Installed Pv Power
+          description: The number of kWs of photovoltaic technology that should be installed in this CPE.
+        installed_battery_capacity:
+          type: number
+          title: Installed Battery Capacity
+          description: The number of kWhs of battery technology that should be installed in this CPE.
+        contracted_power:
+          type: number
+          title: Contracted Power
+          description: The resulting contracted power, in kW, for that period.
+        total_pv:
+          type: number
+          title: Total Pv
+          description: The previous installed PV power plus the recommended PV power to be installed.
+        total_battery:
+          type: number
+          title: Total Battery
+          description: The previous installed battery capacity plus the recommended battery capacity to be installed.
+      type: object
+      required:
+        - cpe_id
+        - installed_pv_power
+        - installed_battery_capacity
+        - contracted_power
+        - total_pv
+        - total_battery
+      title: CpeResults
+    EnergyBattery:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Energy in the battery, in kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: EnergyBattery
+    EnergyBought:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Total energy bought in the community, in kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: EnergyBought
+    EnergySold:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Total energy sold in the community, in kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: EnergySold
+    FinancialIndicator1:
+      properties:
+        value:
+          type: number
+          title: Value
+          description: To be decided.
+      type: object
+      required:
+        - value
+      title: FinancialIndicator1
+    FinancialIndicator2:
+      properties:
+        value:
+          type: number
+          title: Value
+          description: To be decided.
+      type: object
+      required:
+        - value
+      title: FinancialIndicator2
+    FinancialIndicator3:
+      properties:
+        value:
+          type: number
+          title: Value
+          description: To be decided.
+      type: object
+      required:
+        - value
+      title: FinancialIndicator3
+    FinancialIndicator4:
+      properties:
+        value:
+          type: number
+          title: Value
+          description: To be decided.
+      type: object
+      required:
+        - value
+      title: FinancialIndicator4
+    FinancialIndicator5:
+      properties:
+        value:
+          type: number
+          title: Value
+          description: To be decided.
+      type: object
+      required:
+        - value
+      title: FinancialIndicator5
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    MarketMechanism:
+      type: string
+      enum:
+        - Pool
+        - Bilateral
+      title: MarketMechanism
+    MemberCosts:
+      properties:
+        member_id:
+          type: string
+          title: Member Id
+          description: The string that unequivocally identifies the member of the REC that has ownership over the meter making the offer.
+          examples:
+            - Member#1
+        costs:
+          type: number
+          title: Costs
+          description: Total Cost for that member for the whole period considered.
+        savings:
+          type: number
+          title: Savings
+          description: Total Savings for that member for the whole period considered, when compared with the individual self-consumption scenario.
+      type: object
+      required:
+        - member_id
+        - costs
+        - savings
+      title: MemberCosts
+    MemberIDNotFound:
+      properties:
+        message:
+          type: string
+          title: Message
+          examples:
+            - One or more member IDs not found on registry system.
+        order_id:
+          type: string
+          maxLength: 45
+          minLength: 45
+          title: Order Id
+          description: Order identifier for the request.
+          examples:
+            - iaMiULXA9BktPUu2b_PwTtycCSNe0_wYpPt9muwlEtgL49GDg-kggSktAjtu
+      type: object
+      required:
+        - message
+        - order_id
+      title: MemberIDNotFound
+    NetConsumption:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Positive if consuming, Negative if producing. In kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: NetConsumption
+    ObjectiveFunction:
+      type: string
+      enum:
+        - self-consumption
+        - arbitrage
+      title: ObjectiveFunction
+    OrderNotFound:
+      properties:
+        message:
+          type: string
+          title: Message
+          examples:
+            - Order not found.
+        order_id:
+          type: string
+          maxLength: 45
+          minLength: 45
+          title: Order Id
+          description: Order identifier for the request.
+          examples:
+            - iaMiULXA9BktPUu2b_PwTtycCSNe0_wYpPt9muwlEtgL49GDg-kggSktAjtu
+      type: object
+      required:
+        - message
+        - order_id
+      title: OrderNotFound
+    OrderNotProcessed:
+      properties:
+        message:
+          type: string
+          title: Message
+          examples:
+            - Order found, but not yet processed. Please try again later.
+        order_id:
+          type: string
+          maxLength: 45
+          minLength: 45
+          title: Order Id
+          description: Order identifier for the request.
+          examples:
+            - iaMiULXA9BktPUu2b_PwTtycCSNe0_wYpPt9muwlEtgL49GDg-kggSktAjtu
+      type: object
+      required:
+        - message
+        - order_id
+      title: OrderNotProcessed
+    OrderProcessed:
+      properties:
+        order_id:
+          type: string
+          maxLength: 45
+          minLength: 45
+          title: Order Id
+          description: Order identifier for the request.
+          examples:
+            - iaMiULXA9BktPUu2b_PwTtycCSNe0_wYpPt9muwlEtgL49GDg-kggSktAjtu
+        total_cost_rec:
+          allOf:
+            - $ref: '#/components/schemas/TotalCostRec'
+          description: Tocal Cost of the community for the whole period considered.
+        members_costs:
+          items:
+            $ref: '#/components/schemas/MemberCosts'
+          type: array
+          title: Members Costs
+          description: Members' costs and savings.
+        cpe_results:
+          items:
+            $ref: '#/components/schemas/CpeResults'
+          type: array
+          title: Cpe Results
+          description: General CPE results.
+        energy_battery:
+          items:
+            $ref: '#/components/schemas/EnergyBattery'
+          type: array
+          title: Energy Battery
+          description: Energy in the battery for every CPE and every time period.
+        battery_charge:
+          items:
+            $ref: '#/components/schemas/BatteryCharge'
+          type: array
+          title: Battery Charge
+          description: Energy charged and discharged in the battery for every CPE and every time period.
+        net_consumption:
+          items:
+            $ref: '#/components/schemas/NetConsumption'
+          type: array
+          title: Net Consumption
+          description: Net consumption for every CPE and every time period.
+        contracted_power:
+          items:
+            $ref: '#/components/schemas/ContractedPower'
+          type: array
+          title: Contracted Power
+          description: Contracted Power for every CPE.
+        pv_gen:
+          items:
+            $ref: '#/components/schemas/PVGen'
+          type: array
+          title: Pv Gen
+          description: Photovoltaic production for every CPE and every time period.
+        retailer_exchange:
+          items:
+            $ref: '#/components/schemas/RetailerExchange'
+          type: array
+          title: Retailer Exchange
+          description: Retailer exchanges for every CPE and every time period.
+        allocated_energy:
+          items:
+            $ref: '#/components/schemas/AllocatedEnergy'
+          type: array
+          title: Allocated Energy
+          description: Allocated energy between CPEs.
+        self_consumption:
+          items:
+            $ref: '#/components/schemas/SelfConsumption'
+          type: array
+          title: Self Consumption
+          description: Self-consumed for every CPE and every time period.
+        energy_bought:
+          items:
+            $ref: '#/components/schemas/EnergyBought'
+          type: array
+          title: Energy Bought
+          description: Energy bought in the community for every CPE and every time period.
+        energy_sold:
+          items:
+            $ref: '#/components/schemas/EnergySold'
+          type: array
+          title: Energy Sold
+          description: Energy sold in the community for every CPE and every time period.
+        pool_price:
+          items:
+            $ref: '#/components/schemas/PoolPrice'
+          type: array
+          title: Pool Price
+          description: Pool price in the community for every time period.
+        bilateral_price:
+          items:
+            $ref: '#/components/schemas/BilateralPrice'
+          type: array
+          title: Bilateral Price
+          description: Bilateral prices in the community for every time period.
+        bilateral_energy:
+          items:
+            $ref: '#/components/schemas/BilateralEnergy'
+          type: array
+          title: Bilateral Energy
+          description: Bilateral energy transactions in the community for every time period.
+        financial_indicator_1:
+          allOf:
+            - $ref: '#/components/schemas/FinancialIndicator1'
+          description: To be decided.
+        financial_indicator_2:
+          allOf:
+            - $ref: '#/components/schemas/FinancialIndicator2'
+          description: To be decided.
+        financial_indicator_3:
+          allOf:
+            - $ref: '#/components/schemas/FinancialIndicator3'
+          description: To be decided.
+        financial_indicator_4:
+          allOf:
+            - $ref: '#/components/schemas/FinancialIndicator4'
+          description: To be decided.
+        financial_indicator_5:
+          allOf:
+            - $ref: '#/components/schemas/FinancialIndicator5'
+          description: To be decided.
+      type: object
+      required:
+        - order_id
+        - total_cost_rec
+        - members_costs
+        - cpe_results
+        - energy_battery
+        - battery_charge
+        - net_consumption
+        - contracted_power
+        - pv_gen
+        - retailer_exchange
+        - allocated_energy
+        - self_consumption
+        - energy_bought
+        - energy_sold
+        - pool_price
+        - bilateral_price
+        - bilateral_energy
+        - financial_indicator_1
+        - financial_indicator_2
+        - financial_indicator_3
+        - financial_indicator_4
+        - financial_indicator_5
+      title: OrderProcessed
+    PVGen:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: PV generation, in kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: PVGen
+    PoolPrice:
+      properties:
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Pool price of the community, in €/kWh.
+      type: object
+      required:
+        - datetime
+        - value
+      title: PoolPrice
+    PriceMechanism:
+      type: string
+      enum:
+        - MMR
+        - SDR
+        - crossing value
+      title: PriceMechanism
+    PvFeaturesId:
+      type: string
+      enum:
+        - PV1000
+        - PV2000
+      title: PvFeaturesId
+    RetailerExchange:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Positive if buying from retailer, Negative if selling to retailer. In kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: RetailerExchange
+    SelfConsumption:
+      properties:
+        cpe_id:
+          type: string
+          title: Cpe Id
+          description: The string that identifies the CPE of the REC
+          examples:
+            - Prosumer#1
+        datetime:
+          type: string
+          format: date-time
+          title: Datetime
+          description: Datetime in ISO 8601 format.
+        value:
+          type: number
+          minimum: 0
+          title: Value
+          description: Energy self-consumed, in kWh.
+      type: object
+      required:
+        - cpe_id
+        - datetime
+        - value
+      title: SelfConsumption
+    SizingInputs:
+      properties:
+        start_datetime:
+          type: string
+          format: date-time
+          title: Start Datetime
+          description: Start datetime for the sizing horizon (included in it) in ISO 8601 format.
+        end_datetime:
+          type: string
+          format: date-time
+          title: End Datetime
+          description: End datetime for the sizing horizon (included in it) in ISO 8601 format.
+        business_model:
+          allOf:
+            - $ref: '#/components/schemas/BusinessModel'
+          description: 'There are two options: "all market" and "allocated". "allocated" means that installations with shared assets directly allocate their energy to their owners. On the other hand, "all market" means that the allocation of energy is not possible and all energy is shared and bought.'
+          default: all market
+        objective_function:
+          allOf:
+            - $ref: '#/components/schemas/ObjectiveFunction'
+          description: 'There are two options: "arbitrage" and "self consumption". "arbitrage" means the minimization of all community costs. "self consumption maximizes the self consumed energy in the community"'
+          default: arbitrage
+        shared_batteries:
+          type: boolean
+          title: Shared Batteries
+          description: True means that installations with shared batteries are possible.
+          default: false
+        shared_pv:
+          type: boolean
+          title: Shared Pv
+          description: True means that installations with shared PV systems are possible.
+          default: false
+        price_mechanism:
+          allOf:
+            - $ref: '#/components/schemas/PriceMechanism'
+          description: |
+            Three options:
+            MMR: It is the mid-market rate. Price is the average of the highest selling opportunity costs with the lowest buying opportunity costs among all installations negotiating at a certain time period.
+          default: crossing value
+        market_mechanism:
+          allOf:
+            - $ref: '#/components/schemas/MarketMechanism'
+          description: ''
+          default: Pool
+        sdr_compensation:
+          type: number
+          maximum: 1
+          minimum: 0
+          title: Sdr Compensation
+          description: Only considered when choosing "sdr" as the pricing mechanism. <br />Defines a compensation between 0.0 and 1.0 allowing the user to set an incentive for internal trades whenever the REC has a net surplus.
+          default: 0
+        mmr_divisor:
+          type: integer
+          exclusiveMinimum: 0
+          title: Mmr Divisor
+          description: Only considered when choosing "sdr" as the pricing mechanism. <br />Defines the divisor considered on the MMR expression. Values greater than 2 will favor buyers and values smaller than 2 will favor sellers.
+          default: 2
+        minimum_nr_members:
+          type: integer
+          title: Minimum Nr Members
+          description: Minimum number of members that the user wants in the community.
+          default: 2
+        community_location:
+          anyOf:
+            - $ref: '#/components/schemas/Coordinate'
+            - prefixItems:
+                - type: number
+                - type: number
+              type: array
+              maxItems: 2
+              minItems: 2
+            - type: string
+          title: Community Location
+          description: The coordinates of the community.
+          default:
+            latitude: 0
+            longitude: 0
+        radius:
+          type: integer
+          title: Radius
+          description: The radius around the community_location given that will define the maximum distance that the service should look for members at.
+          default: 4
+        member_ids:
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+          title: Member Ids
+          description: An array of strings that unequivocally identifies the members to be included in the REC. <br />All registered assets (i.e., meter ids) belonging totally or partially to the members listed, will be considered in the following computations.
+          examples:
+            - - Member#1
+              - Member#2
+        type_of_community:
+          allOf:
+            - $ref: '#/components/schemas/TypeofCommunity'
+          description: 'Two options: "REC" or "CEC".'
+          default: CEC
+        battery_features_id:
+          allOf:
+            - $ref: '#/components/schemas/BatteryFeaturesId'
+          description: 'Battery ID that identifies the type of battery to be installed in the community. '
+          default: Luna2000
+        pv_features_id:
+          allOf:
+            - $ref: '#/components/schemas/PvFeaturesId'
+          description: PV ID that identifies the type of battery to be installed in the community.
+          default: PV1000
+      type: object
+      required:
+        - start_datetime
+        - end_datetime
+        - member_ids
+      title: SizingInputs
+    TotalCostRec:
+      properties:
+        value:
+          type: number
+          title: Value
+          description: Tocal Cost of the community for the whole period considered.
+      type: object
+      required:
+        - value
+      title: TotalCostRec
+    TypeofCommunity:
+      type: string
+      enum:
+        - REC
+        - CEC
+      title: TypeofCommunity
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
