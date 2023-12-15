@@ -31,5 +31,3 @@ $ uvicorn main:app
 To access the interactive API docs, include the following at the end of the URL where uvicorn is running: 
 - ```/docs``` (Swagger format);
 - ```/redoc``` (ReDoc format);
-
-

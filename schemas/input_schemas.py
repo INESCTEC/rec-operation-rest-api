@@ -67,6 +67,12 @@ class MILPUserParams(UserParams):
 		            'transactions in a local energy market are strictly positive. By setting this parameter to True, '
 		            'the user explicits that such restriction must be considered in the MILP to be solved.'
 	)
+	enforce_surplus_share: bool | None = Field(
+		default=True,
+		description='Under Portuguese legislation, it is required that any meter in a REC that has surplus must share '
+		            'it with other meters in the community. By setting this parameter to True, the user explicits that '
+		            'such restriction must be considered in the MILP to be solved.'
+	)
 	apply_storage_deg_cost: bool | None = Field(
 		default=False,
 		description='If the user desires, a price can be applied for BESS degradation in the MILP solved. '
