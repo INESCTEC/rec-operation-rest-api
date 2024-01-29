@@ -1,6 +1,6 @@
 Copyright (C) [2023], INESC TEC 
 
-ENERSHARE – REC LEM Pricing API: A REST API for computing local energy market (LEM) prices for a Renewable Energy
+ENERSHARE – REC Operation REST API: A REST API for computing local energy market (LEM) prices for a Renewable Energy
 Community (REC) that can promote the minimization of the members’ operation cost with energy.
 
 This software is authored by:
