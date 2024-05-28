@@ -17,6 +17,7 @@ class OfferType(str, Enum):
 	sell = 'sell'
 
 
-class OfferOrigin(str, Enum):
-	registered = 'registered'
-	default = 'default'
+class MILPStatus(str, Enum):
+	optimal = 'Optimal',
+	unbounded = 'Unbounded',
+	infeasible = 'Infeasible'

@@ -1,3 +1,6 @@
-fastapi==0.109.2
+fastapi==0.104.1
 pydantic==2.5.2
+rec_op_lem_prices @ git+https://gitlab.inesctec.pt/cpes/european-projects/enershare/rec_operation_and_lem_prices.git#egg=rec_op_lem_prices
 uvicorn==0.24.0.post1
+loguru~=0.7.2
+pandas~=2.1.4

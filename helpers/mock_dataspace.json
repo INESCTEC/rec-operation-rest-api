@@ -1,0 +1,22 @@
+{
+	"meters_data": {
+		"Meter#1": [
+			{"datetime": "2024-05-16T00:00:00Z", "e_c": 5.0, "e_g": 3.0},
+			{"datetime": "2024-05-16T00:15:00Z", "e_c": 6.0, "e_g": 2.0},
+			{"datetime": "2024-05-16T00:30:00Z", "e_c": 7.0, "e_g": 1.0},
+			{"datetime": "2024-05-16T00:45:00Z", "e_c": 8.0, "e_g": 0.0}
+		],
+		"Meter#2": [
+			{"datetime": "2024-05-16T00:00:00Z", "e_c": 3.0, "e_g": 5.0},
+			{"datetime": "2024-05-16T00:15:00Z", "e_c": 2.0, "e_g": 6.0},
+			{"datetime": "2024-05-16T00:30:00Z", "e_c": 1.0, "e_g": 7.0},
+			{"datetime": "2024-05-16T00:45:00Z", "e_c": 0.0, "e_g": 8.0}
+		]
+	},
+	"ERSE_tariffs": [
+		{"datetime": "2024-05-16T00:00:00Z", "buy_tariff": 0.02, "sell_tariff": 0.01},
+		{"datetime": "2024-05-16T00:15:00Z", "buy_tariff": 0.03, "sell_tariff": 0.01},
+		{"datetime": "2024-05-16T00:30:00Z", "buy_tariff": 0.01, "sell_tariff": 0.01},
+		{"datetime": "2024-05-16T00:45:00Z", "buy_tariff": 0.05, "sell_tariff": 0.01}
+	]
+}

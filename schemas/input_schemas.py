@@ -1,23 +1,42 @@
 from datetime import datetime
-from .enums import LemOrganization
 from pydantic import (
 	BaseModel,
 	Field,
 	field_validator
 )
-from typing import (
-	Annotated,
-	Set
-)
+from typing import Set
 
 
-class UserParams(BaseModel):
+# For dual approach, where the pricing mechanism is not defined
+class BaseUserParams(BaseModel):
 	start_datetime: datetime = Field(
-		description='Start datetime for the price calculation horizon (included in it) in ISO 8601 format.'
+		description='Start datetime for the price calculation horizon (included in it) in ISO 8601 format.',
+		examples=['2024-05-16T00:00:00Z']
 	)
 	end_datetime: datetime = Field(
-		description='End datetime for the price calculation horizon (included in it) in ISO 8601 format.'
+		description='End datetime for the price calculation horizon (included in it) in ISO 8601 format.',
+		examples=['2024-05-16T00:45:00Z']
 	)
+	meter_ids: Set[str] = Field(
+		description='An array of strings that unequivocally identifies the meters to be included in the REC. <br />'
+		            'All registered assets (i.e., meter ids) belonging totally or partially to the meters listed, '
+		            'will be considered in the following computations.',
+		examples=[('Meter#1', 'Meter#2')]
+	)
+
+	@field_validator('end_datetime')
+	def is_end_after_start(cls, end_dt, values):
+		start_dt = values.data['start_datetime']
+		assert end_dt > start_dt, 'end_datetime <= start_datetime'
+		return end_dt
+
+	@field_validator('meter_ids')
+	def more_than_one_meter(cls, ids):
+		assert len(ids) > 1, 'please define at least 2 meters for the REC'
+		return ids
+
+
+class UserParams(BaseUserParams):
 	sdr_compensation: float | None = Field(
 		default=0.0,
 		ge=0.0,
@@ -32,51 +51,4 @@ class UserParams(BaseModel):
 		description='Only considered when choosing "mmr" as the pricing mechanism. <br />'
 		            'Defines the divisor considered on the MMR expression. Values greater than 2 will favor buyers '
 		            'and values smaller than 2 will favor sellers.'
-	)
-	member_ids: Set[str] = Field(
-		description='An array of strings that unequivocally identifies the members to be included in the REC. <br />'
-		            'All registered assets (i.e., meter ids) belonging totally or partially to the members listed, '
-		            'will be considered in the following computations.',
-		examples=[('Member#1', 'Member#2')]
-	)
-
-	@field_validator('end_datetime')
-	def is_end_after_start(cls, end_dt, values):
-		start_dt = values.data['start_datetime']
-		assert end_dt > start_dt, 'end_datetime <= start_datetime'
-		return end_dt
-
-
-class MILPUserParams(UserParams):
-	lem_organization: LemOrganization | None = Field(
-		default='pool',
-		description='Type of local energy market organization. Defines how transactions between members take place, '
-		            'either in a pool fashion (i.e., only total energy sold and bought is defined per meter ID) or '
-		            'through the establishment of bilateral agreements.'
-	)
-	contracted_power_penalty: float | None = Field(
-		default=1.0E3,
-		ge=0.0,
-		description='A fictitious penalty for overlapping the contracted power at any given instant in the '
-		            'meters. <br />'
-		            'The default value is big enough to consider that overlapping is not possible.'
-	)
-	enforce_positive_ac: bool | None = Field(
-		default=True,
-		description='Under Portuguese legislation, it is required that the allocation coefficients that define energy '
-		            'transactions in a local energy market are strictly positive. By setting this parameter to True, '
-		            'the user explicits that such restriction must be considered in the MILP to be solved.'
-	)
-	enforce_surplus_share: bool | None = Field(
-		default=True,
-		description='Under Portuguese legislation, it is required that any meter in a REC that has surplus must share '
-		            'it with other meters in the community. By setting this parameter to True, the user explicits that '
-		            'such restriction must be considered in the MILP to be solved.'
-	)
-	apply_storage_deg_cost: bool | None = Field(
-		default=False,
-		description='If the user desires, a price can be applied for BESS degradation in the MILP solved. '
-		            'It will be applicable to all energy discharged from the assets. <br />'
-		            'The price is specific for each BESS asset and will only be applied if it is available in the '
-		            'respective database (possibly defined during the asset\'s registration).'
 	)
