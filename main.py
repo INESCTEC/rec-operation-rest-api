@@ -104,10 +104,9 @@ def vanilla(pricing_mechanism: PricingMechanism, user_params: UserParams) -> Acc
 					 args=(pricing_mechanism, user_params, id_order, app.state.conn, app.state.cursor)).start()
 
 	logger.info('[API] Returning confirmation message with order ID.')
-	return {
-		'message': 'Processing has started. Use the order ID for status updates.',
-		'order_id': id_order
-	}
+	return JSONResponse(content={'message': 'Processing has started. Use the order ID for status updates.',
+								 'order_id': id_order},
+						status_code=status.HTTP_202_ACCEPTED)
 
 
 @app.get('/vanilla/{order_id}',
@@ -204,10 +203,9 @@ def dual(user_params: BaseUserParams) -> AcceptedResponse:
 	threading.Thread(target=run_dual_thread,
 					 args=(user_params, id_order, app.state.conn, app.state.cursor)).start()
 
-	return {
-		'message': 'Processing has started. Use the order ID for status updates.',
-		'order_id': id_order
-	}
+	return JSONResponse(content={'message': 'Processing has started. Use the order ID for status updates.',
+								 'order_id': id_order},
+						status_code=status.HTTP_202_ACCEPTED)
 
 
 @app.post('/loop/{lem_organization}/{pricing_mechanism}',
@@ -248,10 +246,10 @@ def loop(pricing_mechanism: PricingMechanism,
 				 args=(pm, lo, user_params, id_order, app.state.conn, app.state.cursor)).start()
 
 	logger.info('[API] Returning confirmation message with order ID.')
-	return {
-		'message': 'Processing has started. Use the order ID for status updates.',
-		'order_id': id_order
-	}
+
+	return JSONResponse(content={'message': 'Processing has started. Use the order ID for status updates.',
+								 'order_id': id_order},
+						status_code=status.HTTP_202_ACCEPTED)
 
 
 @app.get('/dual/{order_id}',
