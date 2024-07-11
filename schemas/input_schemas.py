@@ -6,6 +6,8 @@ from pydantic import (
 )
 from typing import Set
 
+from .enums import DatasetOrigin
+
 
 # For dual approach, where the pricing mechanism is not defined
 class BaseUserParams(BaseModel):
@@ -16,6 +18,11 @@ class BaseUserParams(BaseModel):
 	end_datetime: datetime = Field(
 		description='End datetime for the price calculation horizon (included in it) in ISO 8601 format.',
 		examples=['2024-05-16T00:45:00Z']
+	)
+	dataset_origin: DatasetOrigin = Field(
+		description='Dataset origin from which the meter IDs\' data is to be retrieved from. '
+					'Two options are provided:\n - SEL (Smart Energy Lab)\n - CEVE (Cooperativa Elétrica Vale d\'Este',
+		examples=['SEL']
 	)
 	meter_ids: Set[str] = Field(
 		description='An array of strings that unequivocally identifies the meters to be included in the REC. <br />'

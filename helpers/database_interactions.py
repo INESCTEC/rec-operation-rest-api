@@ -123,7 +123,8 @@ def connect_to_sqlite_db() -> (sqlite3.Connection, sqlite3.Cursor):
         meter_id TEXT,
         datetime TEXT,
         energy_purchased REAL,
-        energy_sold REAL
+        energy_sold REAL,
+        sold_position REAL
         )
         ''')
 
@@ -154,15 +155,15 @@ def connect_to_sqlite_db() -> (sqlite3.Connection, sqlite3.Cursor):
         # Create the Bilateral_Self_Consumption_Tariffs, for the self-consumption tariffs fed to the MILP,
         # which are time-varying and  the meter ID
         curs.execute('''
-       CREATE TABLE Bilateral_Self_Consumption_Tariffs (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       order_id TEXT,
-       datetime TEXT,
-       self_consumption_tariff REAL,
-       provider_meter_id TEXT,
-       receiver_meter_id TEXT,
-       FOREIGN KEY(order_id) REFERENCES Orders(order_id)
-       )
-       ''')
+        CREATE TABLE Bilateral_Self_Consumption_Tariffs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id TEXT,
+        datetime TEXT,
+        self_consumption_tariff REAL,
+        provider_meter_id TEXT,
+        receiver_meter_id TEXT,
+        FOREIGN KEY(order_id) REFERENCES Orders(order_id)
+        )
+        ''')
 
     return conn, curs

@@ -347,7 +347,10 @@ def milp_return_structure(cursor: sqlite3.Cursor,
 		# Convert to dataframe for easy manipulation
 		lem_transactions_df = pd.DataFrame(lem_transactions)
 		lem_transactions_df.columns = ['index', 'order_id', 'meter_id', 'datetime',
-									   'energy_purchased', 'energy_sold']
+									   'energy_purchased', 'energy_sold', 'sold_position']
+
+		del lem_transactions_df['index']
+		del lem_transactions_df['order_id']
 
 	else:
 		# Retrieve the meter outputs calculated for the order ID
@@ -359,18 +362,34 @@ def milp_return_structure(cursor: sqlite3.Cursor,
 		# Convert to dataframe for easy manipulation
 		lem_transactions_df = pd.DataFrame(lem_transactions)
 		lem_transactions_df.columns = ['index', 'order_id', 'provider_meter_id',
-									   'receiver_mere_id', 'datetime', 'energy']
+									   'receiver_meter_id', 'datetime', 'energy']
 
-	del lem_transactions_df['index']
-	del lem_transactions_df['order_id']
+		del lem_transactions_df['index']
+		del lem_transactions_df['order_id']
+
+		# - transformation of the df from providerID-receiverID-energy structure to meterID-energySOLD-energyBOUGHT
+		sells = lem_transactions_df.groupby(['provider_meter_id', 'datetime']).sum()
+		sells.reset_index(inplace=True)
+		del sells['receiver_meter_id']
+		sells.columns = ['meter_id', 'datetime', 'energy_sold']
+
+		buys = lem_transactions_df.groupby(['receiver_meter_id', 'datetime']).sum()
+		buys.reset_index(inplace=True)
+		del buys['provider_meter_id']
+		buys.columns = ['meter_id', 'datetime', 'energy_purchased']
+
+		lem_transactions_df = buys.merge(sells, on=['meter_id', 'datetime'])
 
 	# Create final dictionary substructure
-	lem_transactions = {
+	lem_transactions_dict = {
 		'lem_transactions': lem_transactions_df.to_dict('records')
 	}
+	# Add sold_position
+	for lt in lem_transactions_dict['lem_transactions']:
+		lt['sold_position'] = lt['energy_sold'] - lt['energy_purchased']
 
 	# Update the return dictionary
-	milp_return.update(meter_outputs_dict)
+	milp_return.update(lem_transactions_dict)
 
 	# LEM PRICES #######################################################################################################
 	# Retrieve the LEM prices calculated for the order ID

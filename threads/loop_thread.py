@@ -2,7 +2,7 @@ import sqlite3
 
 from loguru import logger
 
-from helpers.dataspace_interactions import fetch_dataspace
+from helpers.dataspace_interactions import fetch_mock_dataspace
 from helpers.main_helpers import milp_inputs
 from rec_op_lem_prices.pricing_mechanisms_functions import (
     loop_pre_bilateral_crossing_value,
@@ -23,7 +23,7 @@ def run_loop_thread(pricing_mechanism: str,
                     curs: sqlite3.Cursor):
     # get the necessary meters' data from the dataspace
     logger.info('[THREAD] Fetching data from dataspace.')
-    data_df, list_of_datetimes, missing_ids, missing_dts = fetch_dataspace(user_params)
+    data_df, list_of_datetimes, missing_ids, missing_dts = fetch_mock_dataspace(user_params)
     meter_ids = set(data_df['meter_id'])
 
     # if any missing meter ids or missing datetimes in the data for those meter ids was found,

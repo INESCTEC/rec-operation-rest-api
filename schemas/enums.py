@@ -12,6 +12,11 @@ class LemOrganization(str, Enum):
 	bilateral = 'bilateral'
 
 
+class DatasetOrigin(str, Enum):
+	ceve = 'CEVE'
+	sel = 'SEL'
+
+
 class OfferType(str, Enum):
 	buy = 'buy'
 	sell = 'sell'

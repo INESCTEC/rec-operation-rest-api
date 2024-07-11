@@ -4,11 +4,18 @@ import sys
 from loguru import logger
 
 
+# LOG_FORMAT = \
+# 	'<green>{time:YYYY-MM-DD HH:mm:ss}</green> | ' \
+# 	'<level>{level: <7}</level> | ' \
+# 	'<cyan>{name: <65}</cyan> | ' \
+# 	'<cyan>{function: <47}</cyan> | ' \
+# 	'<cyan>{line: >3}</cyan> | ' \
+# 	'{message}'
 LOG_FORMAT = \
 	'<green>{time:YYYY-MM-DD HH:mm:ss}</green> | ' \
 	'<level>{level: <7}</level> | ' \
-	'<cyan>{name: <65}</cyan> | ' \
-	'<cyan>{function: <47}</cyan> | ' \
+	'<cyan>{name: <30}</cyan> | ' \
+	'<cyan>{function: <20}</cyan> | ' \
 	'<cyan>{line: >3}</cyan> | ' \
 	'{message}'
 

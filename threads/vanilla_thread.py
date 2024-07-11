@@ -2,7 +2,7 @@ import sqlite3
 
 from loguru import logger
 
-from helpers.dataspace_interactions import fetch_dataspace
+from helpers.dataspace_interactions import fetch_mock_dataspace
 from helpers.main_helpers import (
 	build_offers,
 	generate_vanilla_outputs
@@ -26,7 +26,7 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 
 	# get the necessary meters' data from the dataspace
 	logger.info('[THREAD] Fetching data from dataspace.')
-	data_df, list_of_datetimes, missing_ids, missing_dts = fetch_dataspace(user_params)
+	data_df, list_of_datetimes, missing_ids, missing_dts = fetch_mock_dataspace(user_params)
 
 	# if any missing meter ids or missing datetimes in the data for those meter ids was found,
 	# update the database with an error and an indication of which data is missing

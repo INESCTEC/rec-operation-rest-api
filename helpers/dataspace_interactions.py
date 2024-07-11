@@ -1,7 +1,11 @@
 import json
 import pandas as pd
 
+from collections import OrderedDict
+from dotenv import dotenv_values
 from datetime import datetime
+from loguru import logger
+from tsg_client.controllers import TSGController
 from typing import Union
 
 from schemas.input_schemas import (
@@ -11,6 +15,108 @@ from schemas.input_schemas import (
 
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
+
+def load_dotenv() -> OrderedDict:
+	"""
+	Load environment variables
+	:return: dictionary with environment variables
+	"""
+	return dotenv_values('.env')
+
+
+def dataspace_connection(config: OrderedDict) -> TSGController:
+	"""
+	Set up a connection to the dataspace through a dedicated TSG connector
+	:param config: dictionary with environment variables
+	:return: the TSG connector
+	"""
+	# Set up the TSG connector
+	conn = TSGController(
+		api_key=config['API_KEY'],
+		connector_id=config['CONNECTOR_ID'],
+		access_url=config['ACCESS_URL'],
+		agent_id=config['AGENT_ID']
+	)
+
+	logger.info('Successfully connected to the TSG connector!')
+	logger.info(f'Connector info: vvv\n {conn}')  # print connection details
+
+	return conn
+
+
+def retrieve_data(conn: TSGController, config: OrderedDict) -> pd.DataFrame:
+	"""
+	Retrieve consumption data from CEVE through the dataspace
+	:param conn: TSG connector previously set up
+	:param config: dictionary with environment variables
+	:return: dataframe with retrieved data from CEVE
+	"""
+	# Get external connector info (self-descriptions):
+	EXTERNAL_CONNECTOR = {
+		'CONNECTOR_ID': 'urn:ids:enershare:connectors:connector-sentinel',
+		'ACCESS_URL': 'https://connector-sentinel.enershare.inesctec.pt',
+		'AGENT_ID': 'urn:ids:enershare:participants:INESCTEC-CPES'
+	}
+	# EXTERNAL_CONNECTOR = {
+	# 	'CONNECTOR_ID': 'urn:ids:enershare:connectors:SEL:connector',
+	# 	'ACCESS_URL': 'https://enershare.smartenergylab.pt/router',
+	# 	'AGENT_ID': 'urn:ids:enershare:participants:SEL'
+	# }
+
+	# Get authorization token
+	AUTH = {'Authorization': 'Token {}'.format(config['TOKEN'])}
+
+	# Get the external connector's self-description
+	self_description = conn.get_connector_selfdescription(
+		access_url=EXTERNAL_CONNECTOR['ACCESS_URL'],
+		connector_id=EXTERNAL_CONNECTOR['CONNECTOR_ID'],
+		agent_id=EXTERNAL_CONNECTOR['AGENT_ID']
+	)
+
+	# Get the OpenAPI specs
+	api_version = '1.0.0'
+	open_api_specs = conn.get_openapi_specs(self_description, api_version)
+	endpoint = '/dataspace/inesctec/observed/ceve_living-lab/metering/energy'
+	data_app_agent_id = open_api_specs[0]['agent']
+
+	# Define the request parameters
+	user_id = '64b7080d1efc'
+	date_start = '2024-06-20 08:10'
+	date_end = '2024-06-20 08:15'
+	params = {
+		'shelly_id': user_id,
+		'phase': 'total',
+		'parameter': 'instant_active_power',
+		'start_date': date_start,
+		'end_date': date_end,
+	}
+
+	# Execute external OpenAPI request:
+	logger.info(f"""
+		Performing a request to:
+		- Agent ID: {data_app_agent_id}
+		- API Version: {api_version}
+		- Endpoint: {endpoint}
+		""")
+
+	response = conn.openapi_request(
+		headers=AUTH,
+		external_access_url=EXTERNAL_CONNECTOR['ACCESS_URL'],
+		data_app_agent_id=data_app_agent_id,
+		api_version=api_version,
+		endpoint=endpoint,
+		params=params,
+		method='get'
+	)
+
+	data = pd.DataFrame(response.json()['data'])
+
+	logger.info(f'> Connector {EXTERNAL_CONNECTOR['CONNECTOR_ID']} RESPONSE:')
+	logger.info(f'Status Code: {response.status_code}')
+	logger.info(f'Retrieved data: vvv\n{data}')
+
+	return data
 
 
 def datetime_to_string(dt: datetime, fmt=DATETIME_FORMAT) -> str:
@@ -23,7 +129,7 @@ def datetime_to_string(dt: datetime, fmt=DATETIME_FORMAT) -> str:
 	return dt.strftime(format=fmt)
 
 
-def fetch_dataspace(user_params: Union[UserParams, BaseUserParams]) \
+def fetch_mock_dataspace(user_params: Union[UserParams, BaseUserParams]) \
 		-> (pd.core.frame.DataFrame, list[str], list[str], dict[str, list[str]]):
 	"""
 	Auxiliary function to fetch all necessary data to answer a "vanilla" request, from the dataspace.

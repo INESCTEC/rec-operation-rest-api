@@ -211,6 +211,11 @@ class PoolLEMTransactions(BaseModel):
 		description='Energy that was sold in the local energy market (LEM), in kWh.',
 		examples=[5.0]
 	)
+	sold_position: float = Field(
+		description='Sold position of the meter ID, for the datetime, '
+					'calculated as the energy sold minus the energy bought in the LEM, in kWh.',
+		examples=[0.0]
+	)
 
 
 class BilateralLEMTransactions(BaseModel):

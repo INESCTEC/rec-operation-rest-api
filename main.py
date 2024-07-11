@@ -1,4 +1,5 @@
 import threading
+import warnings
 
 from fastapi import (
 	FastAPI,
@@ -8,6 +9,11 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from helpers.database_interactions import connect_to_sqlite_db
+from helpers.dataspace_interactions import (
+	dataspace_connection,
+	load_dotenv,
+	retrieve_data
+)
 from helpers.log_setting import (
 	remove_logfile_handler,
 	set_logfile_handler,
@@ -42,6 +48,9 @@ from threads.dual_thread import run_dual_thread
 from threads.loop_thread import run_loop_thread
 
 
+# Silence deprecation warning for startup and shutdown events
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 # Initialize the app
 app = FastAPI(
 	title='Enershare - REC Operation and LEM pricing API',
@@ -51,14 +60,22 @@ app = FastAPI(
 	version='0.2.0'
 )
 
+# Set up logging
+set_stdout_logger()
+app.state.handler = set_logfile_handler('logs')
+
+# DATASPACE INTERACTIONS ###############################################################################################
+# # Load environment variables
+# config = load_dotenv()
+# # Connect to dataspace
+# dataspace_connection = dataspace_connection(config)
+# # Retrieve CEVE data
+# CEVE_data = retrieve_data(dataspace_connection, config)
+
 
 # Runs when the API is started: set loggers and create / connect to SQLite database ####################################
 @app.on_event('startup')
 def startup_event():
-	# Set up logging
-	set_stdout_logger()
-	app.state.handler = set_logfile_handler('logs')
-
 	# Get cursor and connection to SQLite database
 	app.state.conn, app.state.cursor = connect_to_sqlite_db()
 

@@ -2,7 +2,7 @@ import sqlite3
 
 from loguru import logger
 
-from helpers.dataspace_interactions import fetch_dataspace
+from helpers.dataspace_interactions import fetch_mock_dataspace
 from helpers.main_helpers import milp_inputs
 from rec_op_lem_prices.optimization_functions import run_pre_single_stage_collective_pool_milp
 from schemas.input_schemas import BaseUserParams
@@ -14,7 +14,7 @@ def run_dual_thread(user_params: BaseUserParams,
 					curs: sqlite3.Cursor):
 	# get the necessary meters' data from the dataspace
 	logger.info('[THREAD] Fetching data from dataspace.')
-	data_df, list_of_datetimes, missing_ids, missing_dts = fetch_dataspace(user_params)
+	data_df, list_of_datetimes, missing_ids, missing_dts = fetch_mock_dataspace(user_params)
 	meter_ids = set(data_df['meter_id'])
 
 	# if any missing meter ids or missing datetimes in the data for those meter ids was found,
@@ -27,7 +27,6 @@ def run_dual_thread(user_params: BaseUserParams,
 			SET processed = ?, error = ?, message = ?
 			WHERE order_id = ?
 		''', (True, '412', message, id_order))
-		conn.commit()
 
 	elif any(missing_dts.values()):
 		logger.warning('[THREAD] Missing data points in dataspace.')
@@ -38,7 +37,6 @@ def run_dual_thread(user_params: BaseUserParams,
 			SET processed = ?, error = ?, message = ?
 			WHERE order_id = ?
 		''', (True, '422', message, id_order))
-		conn.commit()
 
 	# otherwise, proceed normally
 	else:
