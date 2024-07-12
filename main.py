@@ -9,11 +9,11 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from helpers.database_interactions import connect_to_sqlite_db
-from helpers.dataspace_interactions import (
-	dataspace_connection,
-	load_dotenv,
-	retrieve_data
-)
+# from helpers.dataspace_interactions import (
+# 	dataspace_connection,
+# 	load_dotenv,
+# 	retrieve_data
+# )
 from helpers.log_setting import (
 	remove_logfile_handler,
 	set_logfile_handler,

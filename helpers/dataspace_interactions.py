@@ -112,7 +112,7 @@ def retrieve_data(conn: TSGController, config: OrderedDict) -> pd.DataFrame:
 
 	data = pd.DataFrame(response.json()['data'])
 
-	logger.info(f'> Connector {EXTERNAL_CONNECTOR['CONNECTOR_ID']} RESPONSE:')
+	logger.info(f'> Connector {EXTERNAL_CONNECTOR["CONNECTOR_ID"]} RESPONSE:')
 	logger.info(f'Status Code: {response.status_code}')
 	logger.info(f'Retrieved data: vvv\n{data}')
 
