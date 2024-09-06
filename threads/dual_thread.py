@@ -2,7 +2,7 @@ import sqlite3
 
 from loguru import logger
 
-from helpers.dataspace_interactions import fetch_mock_dataspace
+from helpers.dataspace_interactions import fetch_dataspace
 from helpers.main_helpers import milp_inputs
 from rec_op_lem_prices.optimization_functions import run_pre_single_stage_collective_pool_milp
 from schemas.input_schemas import BaseUserParams
@@ -13,14 +13,13 @@ def run_dual_thread(user_params: BaseUserParams,
 					conn: sqlite3.Connection,
 					curs: sqlite3.Cursor):
 	# get the necessary meters' data from the dataspace
-	logger.info('[THREAD] Fetching data from dataspace.')
-	data_df, list_of_datetimes, missing_ids, missing_dts = fetch_mock_dataspace(user_params)
-	meter_ids = set(data_df['meter_id'])
+	logger.info('Fetching data from dataspace.')
+	data_df, sc_series, list_of_datetimes, missing_ids, missing_dts = fetch_dataspace(user_params)
 
 	# if any missing meter ids or missing datetimes in the data for those meter ids was found,
 	# update the database with an error and an indication of which data is missing
 	if missing_ids:
-		logger.warning('[THREAD] Missing meter IDs in dataspace.')
+		logger.warning('Missing meter IDs in dataspace.')
 		message = f'One or more meter IDs not found on registry system: {missing_ids}'
 		curs.execute('''
 			UPDATE Orders
@@ -29,7 +28,7 @@ def run_dual_thread(user_params: BaseUserParams,
 		''', (True, '412', message, id_order))
 
 	elif any(missing_dts.values()):
-		logger.warning('[THREAD] Missing data points in dataspace.')
+		logger.warning('Missing data points in dataspace.')
 		missing_pairs = {k: v for k, v in missing_dts.items() if v}
 		message = f'One or more data point for one or more meter IDs not found on registry system: {missing_pairs}'
 		curs.execute('''
@@ -40,16 +39,19 @@ def run_dual_thread(user_params: BaseUserParams,
 
 	# otherwise, proceed normally
 	else:
+		# get the set of meter ids requested
+		meter_ids = set(data_df['meter_id'])
+
 		# prepare the inputs for the MILP
-		logger.info('[THREAD] Building inputs.')
-		inputs = milp_inputs(data_df, 'pool')
+		logger.info('Building inputs.')
+		inputs = milp_inputs(data_df, sc_series, 'pool')
 
 		# run optimization
-		logger.info('[THREAD] Running MILP.')
+		logger.info('Running MILP.')
 		results = run_pre_single_stage_collective_pool_milp(inputs)
 
 		# update the database with the new order ID
-		logger.info('[THREAD] Updating database with results.')
+		logger.info('Updating database with results.')
 		curs.execute('''
 			UPDATE Orders
 			SET processed = ?
@@ -141,4 +143,4 @@ def run_dual_thread(user_params: BaseUserParams,
 
 		conn.commit()
 
-		logger.info('[THREAD] Finished!')
+		logger.info('Finished!')

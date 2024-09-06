@@ -53,6 +53,8 @@ def build_offers(all_data_df: pd.core.frame.DataFrame, datetime_range_str: list[
 	sellers_df = all_data_df.loc[all_data_df['net_load'] < 0]
 
 	# remove unnecessary columns
+	buyers_df.reset_index(inplace=True)
+	sellers_df.reset_index(inplace=True)
 	buyers_df = buyers_df[['datetime', 'meter_id', 'net_load', 'buy_tariff']]
 	sellers_df = sellers_df[['datetime', 'meter_id', 'net_load', 'sell_tariff']]
 
@@ -109,16 +111,16 @@ def generate_vanilla_outputs(
 			offers.append({
 				'datetime': dt,
 				'meter_id': dt_buy_offer['origin'],
-				'amount': dt_buy_offer['amount'],
-				'value': dt_buy_offer['value'],
+				'amount': round(dt_buy_offer['amount'], 3),
+				'value': round(dt_buy_offer['value'], 2),
 				'type': 'buy'
 			})
 		for dt_sell_offer in dt_sell_offers:
 			offers.append({
 				'datetime': dt,
 				'meter_id': dt_sell_offer['origin'],
-				'amount': dt_sell_offer['amount'],
-				'value': dt_sell_offer['value'],
+				'amount': round(dt_sell_offer['amount'], 3),
+				'value': round(dt_sell_offer['value'], 2),
 				'type': 'sell'
 			})
 
@@ -169,43 +171,46 @@ def offers_return_structure(cursor: sqlite3.Cursor, order_id: str) -> list[LemPr
 	return offers_df.to_dict('records')
 
 
-def milp_inputs(all_data_df: pd.core.frame.DataFrame, lem_organization: LemOrganization) \
+def milp_inputs(
+		all_data_df: pd.core.frame.DataFrame,
+		self_cons_tariffs_series: pd.core.series.Series,
+		lem_organization: LemOrganization) \
 		-> SinglePreBackpackS2PoolDict:
 	"""
 	Auxiliary function to build the inputs for post-delivery MILP functions
 	:param all_data_df: a pandas DataFrame with 6 columns: datetime, e_c, e_g, meter_id, buy_tariff and sell_tariff
+	:param self_cons_tariffs_series: a pandas Series with the self consumption tariffs
 	:param lem_organization: string indicating if LEM is organized in a "pool" or by "bilateral" transactions
 	:return: structure ready to run the desired MILP
 	"""
 	meter_ids = all_data_df['meter_id'].unique()
+	all_data_df.reset_index(inplace=True)
 	nr_time_steps = len(all_data_df['datetime'].unique())
-
-	all_data_df['datetime'] = pd.to_datetime(all_data_df['datetime'])
 
 	# pool market organization - self-consumption tariffs are the same for all transactions
 	if lem_organization == 'pool':
-		l_grid = [0.01] * nr_time_steps
+		l_grid = self_cons_tariffs_series.to_list()
 	# bilateral market organization - self-consumption tariffs must be defined between pairs of meters
 	else:
 		l_grid = {receiver_meter_id:
-					  {provider_meter_id: [0.01] * nr_time_steps
+					  {provider_meter_id: self_cons_tariffs_series.to_list()
 					   for provider_meter_id in meter_ids if provider_meter_id != receiver_meter_id}
 				  for receiver_meter_id in meter_ids}
 
 	backpack = {
 		'meters': {
 			meter_id: {
-				'btm_storage': {  # todo: where to fetch these, locally?
-					f'storage_{meter_id}': {
-						'degradation_cost': 0.01,
-						'e_bn': 5.0,
-						'eff_bc': 1.0,
-						'eff_bd': 1.0,
-						'init_e': 0.0,
-						'p_max': 5.0,
-						'soc_max': 100.0,
-						'soc_min': 0.0
-					}
+				'btm_storage': {
+					# f'storage_{meter_id}': {
+					# 	'degradation_cost': 0.01,
+					# 	'e_bn': 5.0,
+					# 	'eff_bc': 1.0,
+					# 	'eff_bd': 1.0,
+					# 	'init_e': 0.0,
+					# 	'p_max': 5.0,
+					# 	'soc_max': 100.0,
+					# 	'soc_min': 0.0
+					# }
 				},
 				'e_c': all_data_df.loc[
 					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['e_c'].to_list(),
@@ -215,14 +220,14 @@ def milp_inputs(all_data_df: pd.core.frame.DataFrame, lem_organization: LemOrgan
 					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['buy_tariff'].to_list(),
 				'l_sell': all_data_df.loc[
 					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['sell_tariff'].to_list(),
-				'max_p': 100  # todo: where to fetch these, locally?
+				'max_p': 100
 			}
 			for meter_id in meter_ids
 		},
 		'delta_t': 0.25,
 		'horizon': nr_time_steps * 0.25,
 		'l_extra': 10,
-		'l_grid': l_grid,  # todo: where to fetch these? locally?
+		'l_grid': l_grid,
 		'l_lem': [0.0] * nr_time_steps,
 		'l_market_buy': [10] * nr_time_steps,
 		'l_market_sell': [0] * nr_time_steps,

@@ -2,7 +2,7 @@ import sqlite3
 
 from loguru import logger
 
-from helpers.dataspace_interactions import fetch_mock_dataspace
+from helpers.dataspace_interactions import fetch_dataspace
 from helpers.main_helpers import (
 	build_offers,
 	generate_vanilla_outputs
@@ -15,6 +15,8 @@ from rec_op_lem_prices import (
 from schemas.enums import PricingMechanism
 from schemas.input_schemas import UserParams
 
+logger.disable("rec_op_lem_prices")
+
 
 def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 					   user_params: UserParams,
@@ -25,13 +27,13 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 	pm = pricing_mechanism.value
 
 	# get the necessary meters' data from the dataspace
-	logger.info('[THREAD] Fetching data from dataspace.')
-	data_df, list_of_datetimes, missing_ids, missing_dts = fetch_mock_dataspace(user_params)
+	logger.info('Fetching data from dataspace.')
+	data_df, sc_df, list_of_datetimes, missing_ids, missing_dts = fetch_dataspace(user_params)
 
 	# if any missing meter ids or missing datetimes in the data for those meter ids was found,
 	# update the database with an error and an indication of which data is missing
 	if missing_ids:
-		logger.warning('[THREAD] Missing meter IDs in dataspace.')
+		logger.warning('Missing meter IDs in dataspace.')
 		message = f'One or more meter IDs not found on registry system: {missing_ids}'
 		curs.execute('''
 			UPDATE Orders
@@ -41,7 +43,7 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 		conn.commit()
 
 	elif any(missing_dts.values()):
-		logger.warning('[THREAD] Missing data points in dataspace.')
+		logger.warning('Missing data points in dataspace.')
 		missing_pairs = {k: v for k, v in missing_dts.items() if v}
 		message = f'One or more data point for one or more meter IDs not found on registry system: {missing_pairs}'
 		curs.execute('''
@@ -54,12 +56,12 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 	# otherwise, proceed normally
 	else:
 		# compute the buying and selling offers to be used for the price calculation
-		logger.info('[THREAD] Building offers.')
+		logger.info('Building offers.')
 		buy_offers_list, sell_offers_list = build_offers(data_df, list_of_datetimes)
 
 		# compute the LEM price for each time step, defined by the start datetime, end datetime and step of t,
 		# plus the
-		logger.info('[THREAD] Computing prices.')
+		logger.info('Computing prices.')
 		lem_prices = {}
 		output_price = None
 		for idx, dt in enumerate(list_of_datetimes):
@@ -90,7 +92,7 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 			lem_prices[dt] = round(output_price, 2)
 
 		# Prepare the outputs to be stored in the local database
-		logger.info('[THREAD] Updating database with results.')
+		logger.info('Updating database with results.')
 		lem_prices, offers = generate_vanilla_outputs(buy_offers_list, sell_offers_list, lem_prices)
 
 		# update the database with the new order ID
@@ -115,4 +117,4 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 
 		conn.commit()
 
-		logger.info('[THREAD] Finished!')
+		logger.info('Finished!')

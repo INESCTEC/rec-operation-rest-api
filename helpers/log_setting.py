@@ -14,7 +14,7 @@ from loguru import logger
 LOG_FORMAT = \
 	'<green>{time:YYYY-MM-DD HH:mm:ss}</green> | ' \
 	'<level>{level: <7}</level> | ' \
-	'<cyan>{name: <30}</cyan> | ' \
+	'<cyan>{name: <40}</cyan> | ' \
 	'<cyan>{function: <20}</cyan> | ' \
 	'<cyan>{line: >3}</cyan> | ' \
 	'{message}'
@@ -36,10 +36,10 @@ def set_logfile_handler(logfile_name: str) -> int:
 	:return: log file's handler identification
 	"""
 	# Paths
-	FILE_PATH = os.path.abspath(os.path.join(r'logs', logfile_name))
+	file_path = os.path.abspath(os.path.join(r'logs', logfile_name))
 
 	# Add a new handler, with the same format as the general purpose handler, and return its ID
-	handler_id = logger.add(FILE_PATH, format=LOG_FORMAT, rotation="25 MB", backtrace=True)
+	handler_id = logger.add(file_path, format=LOG_FORMAT, rotation="25 MB", backtrace=True)
 
 	return handler_id
 

@@ -6,3 +6,6 @@ AGENT_ID=insert_agent_id_here
 
 # Metadata Broker info:
 METADATA_BROKER_URL=insert_metadata_broker_url_here
+
+# SENTINEL TOKEN (http://vcpes08.inesctec.pt/)
+TOKEN=your_sentinel_token

@@ -9,11 +9,6 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from helpers.database_interactions import connect_to_sqlite_db
-# from helpers.dataspace_interactions import (
-# 	dataspace_connection,
-# 	load_dotenv,
-# 	retrieve_data
-# )
 from helpers.log_setting import (
 	remove_logfile_handler,
 	set_logfile_handler,
@@ -64,14 +59,6 @@ app = FastAPI(
 set_stdout_logger()
 app.state.handler = set_logfile_handler('logs')
 
-# DATASPACE INTERACTIONS ###############################################################################################
-# # Load environment variables
-# config = load_dotenv()
-# # Connect to dataspace
-# dataspace_connection = dataspace_connection(config)
-# # Retrieve CEVE data
-# CEVE_data = retrieve_data(dataspace_connection, config)
-
 
 # Runs when the API is started: set loggers and create / connect to SQLite database ####################################
 @app.on_event('startup')
@@ -100,14 +87,14 @@ def shutdown_event():
           tags=['Calculate LEM Prices'])
 def vanilla(pricing_mechanism: PricingMechanism, user_params: UserParams) -> AcceptedResponse:
 	# generate an order ID for the user to fetch the results when ready
-	logger.info('[API] Generating unique order ID.')
+	logger.info('Generating unique order ID.')
 	id_order = generate_order_id()
 
 	# get the type of mechanism select for price computation
 	pm = pricing_mechanism.value
 
 	# update the database with the new order ID
-	logger.info('[API] Creating registry in database for new order ID.')
+	logger.info('Creating registry in database for new order ID.')
 	app.state.cursor.execute('''
 		INSERT INTO Orders (order_id, processed, error, message, request_type, lem_organization, pricing_mechanism)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -116,11 +103,11 @@ def vanilla(pricing_mechanism: PricingMechanism, user_params: UserParams) -> Acc
 
 	# initiate a parallel process (thread) to start computing the prices
 	# while a message is immediately sent to the user
-	logger.info('[API] Launching thread.')
+	logger.info('Launching thread.')
 	threading.Thread(target=run_vanilla_thread,
 					 args=(pricing_mechanism, user_params, id_order, app.state.conn, app.state.cursor)).start()
 
-	logger.info('[API] Returning confirmation message with order ID.')
+	logger.info('Returning confirmation message with order ID.')
 	return JSONResponse(content={'message': 'Processing has started. Use the order ID for status updates.',
 								 'order_id': id_order},
 						status_code=status.HTTP_202_ACCEPTED)
@@ -139,7 +126,7 @@ def vanilla(pricing_mechanism: PricingMechanism, user_params: UserParams) -> Acc
          tags=['Retrieve LEM Prices'])
 def vanilla(order_id: str) -> VanillaOutputs:
 	# Check if the order_id exists in the database
-	logger.info('[API] Searching for order ID in local database.')
+	logger.info('Searching for order ID in local database.')
 	app.state.cursor.execute('''
 		SELECT * FROM Orders WHERE order_id = ?
 	''', (order_id,))
@@ -148,14 +135,14 @@ def vanilla(order_id: str) -> VanillaOutputs:
 	order = app.state.cursor.fetchone()
 	order_type = order[4]
 	if order is not None and order_type == 'vanilla':
-		logger.info('[API] Order ID found. Checking if order has already been processed.')
+		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
 		error = order[2]
 		message = order[3]
 
 		# Check if the order is processed
 		if processed:
-			logger.info('[API] Order ID processed. Checking if process raised error.')
+			logger.info('Order ID processed. Checking if process raised error.')
 			if error == '412':
 				# If the order is found but was met with missing meter ID(s)
 				return JSONResponse(content={'message': message,
@@ -169,7 +156,7 @@ def vanilla(order_id: str) -> VanillaOutputs:
 									status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 			else:
-				logger.info('[API] Order ID correctly processed. Fetching outputs.')
+				logger.info('Order ID correctly processed. Fetching outputs.')
 				# If the order resulted from a request to a "vanilla" endpoint,
 				# prepare the response message accordingly
 				lem_prices = lem_prices_return_structure(app.state.cursor, order_id)
@@ -203,11 +190,11 @@ def vanilla(order_id: str) -> VanillaOutputs:
           tags=['Schedule operation and calculate LEM Prices'])
 def dual(user_params: BaseUserParams) -> AcceptedResponse:
 	# generate an order ID for the user to fetch the results when ready
-	logger.info('[API] Generating unique order ID.')
+	logger.info('Generating unique order ID.')
 	id_order = generate_order_id()
 
 	# update the database with the new order ID
-	logger.info('[API] Creating registry in database for new order ID.')
+	logger.info('Creating registry in database for new order ID.')
 	app.state.cursor.execute('''
 			INSERT INTO Orders (order_id, processed, error, message, request_type, lem_organization, pricing_mechanism)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -216,7 +203,7 @@ def dual(user_params: BaseUserParams) -> AcceptedResponse:
 
 	# initiate a parallel process (thread) to start computing the prices
 	# while a message is immediately sent to the user
-	logger.info('[API] Launching thread.')
+	logger.info('Launching thread.')
 	threading.Thread(target=run_dual_thread,
 					 args=(user_params, id_order, app.state.conn, app.state.cursor)).start()
 
@@ -238,7 +225,7 @@ def loop(pricing_mechanism: PricingMechanism,
 		 lem_organization: LemOrganization,
 		 user_params: UserParams) -> AcceptedResponse:
 	# generate an order ID for the user to fetch the results when ready
-	logger.info('[API] Generating unique order ID.')
+	logger.info('Generating unique order ID.')
 	id_order = generate_order_id()
 
 	# get the type of mechanism select for price computation
@@ -248,7 +235,7 @@ def loop(pricing_mechanism: PricingMechanism,
 	lo = lem_organization.value
 
 	# update the database with the new order ID
-	logger.info('[API] Creating registry in database for new order ID.')
+	logger.info('Creating registry in database for new order ID.')
 	app.state.cursor.execute('''
 			INSERT INTO Orders (order_id, processed, error, message, request_type, lem_organization, pricing_mechanism)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -257,12 +244,12 @@ def loop(pricing_mechanism: PricingMechanism,
 
 	# initiate a parallel process (thread) to start computing the prices
 	# while a message is immediately sent to the user
-	logger.info('[API] Launching thread.')
+	logger.info('Launching thread.')
 
 	threading.Thread(target=run_loop_thread,
 				 args=(pm, lo, user_params, id_order, app.state.conn, app.state.cursor)).start()
 
-	logger.info('[API] Returning confirmation message with order ID.')
+	logger.info('Returning confirmation message with order ID.')
 
 	return JSONResponse(content={'message': 'Processing has started. Use the order ID for status updates.',
 								 'order_id': id_order},
@@ -283,7 +270,7 @@ def loop(pricing_mechanism: PricingMechanism,
          tags=['Retrieve operation and LEM prices'])
 def dual(order_id: str) -> PoolMILPOutputs:
 	# Check if the order_id exists in the database
-	logger.info('[API] Searching for order ID in local database.')
+	logger.info('Searching for order ID in local database.')
 	app.state.cursor.execute('''
 		SELECT * FROM Orders WHERE order_id = ?
 	''', (order_id,))
@@ -293,14 +280,14 @@ def dual(order_id: str) -> PoolMILPOutputs:
 	order_type = order[4]
 	lem_organization = order[5]
 	if order is not None and order_type == 'dual' and lem_organization == 'pool':
-		logger.info('[API] Order ID found. Checking if order has already been processed.')
+		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
 		error = order[2]
 		message = order[3]
 
 		# Check if the order is processed
 		if processed:
-			logger.info('[API] Order ID processed. Checking if process raised error.')
+			logger.info('Order ID processed. Checking if process raised error.')
 			if error == '412':
 				# If the order is found but was met with missing meter ID(s)
 				return JSONResponse(content={'message': message,
@@ -314,7 +301,7 @@ def dual(order_id: str) -> PoolMILPOutputs:
 									status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 			else:
-				logger.info('[API] Order ID correctly processed. Fetching outputs.')
+				logger.info('Order ID correctly processed. Fetching outputs.')
 				# If the order resulted from a request to a "vanilla" endpoint,
 				# prepare the response message accordingly
 				milp_return = milp_return_structure(app.state.cursor, order_id, 'pool')
@@ -349,7 +336,7 @@ def dual(order_id: str) -> PoolMILPOutputs:
          tags=['Retrieve operation and LEM prices'])
 def loop_pool(order_id: str) -> PoolMILPOutputs:
 	# Check if the order_id exists in the database
-	logger.info('[API] Searching for order ID in local database.')
+	logger.info('Searching for order ID in local database.')
 	app.state.cursor.execute('''
 		SELECT * FROM Orders WHERE order_id = ?
 	''', (order_id,))
@@ -359,14 +346,14 @@ def loop_pool(order_id: str) -> PoolMILPOutputs:
 	order_type = order[4]
 	lem_organization = order[5]
 	if order is not None and order_type == 'loop' and lem_organization == 'pool':
-		logger.info('[API] Order ID found. Checking if order has already been processed.')
+		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
 		error = order[2]
 		message = order[3]
 
 		# Check if the order is processed
 		if processed:
-			logger.info('[API] Order ID processed. Checking if process raised error.')
+			logger.info('Order ID processed. Checking if process raised error.')
 			if error == '412':
 				# If the order is found but was met with missing meter ID(s)
 				return JSONResponse(content={'message': message,
@@ -380,7 +367,7 @@ def loop_pool(order_id: str) -> PoolMILPOutputs:
 									status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 			else:
-				logger.info('[API] Order ID correctly processed. Fetching outputs.')
+				logger.info('Order ID correctly processed. Fetching outputs.')
 				# If the order resulted from a request to a "vanilla" endpoint,
 				# prepare the response message accordingly
 				milp_return = milp_return_structure(app.state.cursor, order_id, 'pool')
@@ -415,7 +402,7 @@ def loop_pool(order_id: str) -> PoolMILPOutputs:
          tags=['Retrieve operation and LEM prices'])
 def loop_bilateral(order_id: str) -> BilateralMILPOutputs:
 	# Check if the order_id exists in the database
-	logger.info('[API] Searching for order ID in local database.')
+	logger.info('Searching for order ID in local database.')
 	app.state.cursor.execute('''
 		SELECT * FROM Orders WHERE order_id = ?
 	''', (order_id,))
@@ -425,14 +412,14 @@ def loop_bilateral(order_id: str) -> BilateralMILPOutputs:
 	order_type = order[4]
 	lem_organization = order[5]
 	if order is not None and order_type == 'loop' and lem_organization == 'bilateral':
-		logger.info('[API] Order ID found. Checking if order has already been processed.')
+		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
 		error = order[2]
 		message = order[3]
 
 		# Check if the order is processed
 		if processed:
-			logger.info('[API] Order ID processed. Checking if process raised error.')
+			logger.info('Order ID processed. Checking if process raised error.')
 			if error == '412':
 				# If the order is found but was met with missing meter ID(s)
 				return JSONResponse(content={'message': message,
@@ -446,7 +433,7 @@ def loop_bilateral(order_id: str) -> BilateralMILPOutputs:
 									status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 			else:
-				logger.info('[API] Order ID correctly processed. Fetching outputs.')
+				logger.info('Order ID correctly processed. Fetching outputs.')
 				# If the order resulted from a request to a "vanilla" endpoint,
 				# prepare the response message accordingly
 				milp_return = milp_return_structure(app.state.cursor, order_id, 'bilateral')

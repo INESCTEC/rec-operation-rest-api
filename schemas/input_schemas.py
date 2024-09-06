@@ -1,4 +1,7 @@
-from datetime import datetime
+from datetime import (
+	datetime,
+	timezone
+)
 from pydantic import (
 	BaseModel,
 	Field,
@@ -30,6 +33,14 @@ class BaseUserParams(BaseModel):
 		            'will be considered in the following computations.',
 		examples=[('Meter#1', 'Meter#2')]
 	)
+
+	@field_validator('start_datetime')
+	def parse_start_datetime(cls, start_dt):
+		return start_dt.astimezone(timezone.utc)
+
+	@field_validator('end_datetime')
+	def parse_start_endtime(cls, end_dt):
+		return end_dt.astimezone(timezone.utc)
 
 	@field_validator('end_datetime')
 	def is_end_after_start(cls, end_dt, values):

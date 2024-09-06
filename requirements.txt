@@ -4,6 +4,7 @@ anyio==3.7.1
 argcomplete==3.4.0
 Babel==2.14.0
 bcrypt==4.1.2
+Brotli==1.0.9
 build==1.2.1
 CacheControl==0.14.0
 certifi==2024.2.2
@@ -45,6 +46,7 @@ packaging==24.0
 pandas==2.1.4
 pexpect==4.9.0
 pillow==10.2.0
+pip==24.2
 pipx==1.6.0
 pkginfo==1.11.1
 platformdirs==4.2.2
@@ -59,6 +61,7 @@ pydantic_core==2.14.5
 Pygments==2.17.2
 pyparsing==3.1.2
 pyproject_hooks==1.1.0
+PySocks==1.7.1
 pytest==8.1.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
@@ -70,6 +73,7 @@ rec-op-lem-prices @ git+https://gitlab.inesctec.pt/cpes/european-projects/enersh
 requests==2.32.2
 requests-toolbelt==1.0.0
 ruff==0.3.7
+scipy~=1.14.0
 setuptools==68.0.0
 shellingham==1.5.4
 six==1.16.0
@@ -95,4 +99,5 @@ userpath==1.9.2
 uvicorn==0.24.0.post1
 virtualenv==20.26.2
 wheel==0.41.2
+win-inet-pton==1.1.0
 win32-setctime==1.1.0
