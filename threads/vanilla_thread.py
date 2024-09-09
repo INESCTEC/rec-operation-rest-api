@@ -106,14 +106,24 @@ def run_vanilla_thread(pricing_mechanism: PricingMechanism,
 			curs.execute('''
 				INSERT INTO Lem_Prices (order_id, datetime, value)
 				VALUES (?, ?, ?)
-			''', (id_order, price['datetime'], price['value']))
+			''', (
+				id_order,
+				price['datetime'],
+				round(price['value'], 3)
+			))
 
 		for offer in offers:
 			curs.execute('''
 				INSERT INTO Offers (order_id, datetime, meter_id, amount, value, type)
 				VALUES (?, ?, ?, ?, ?, ?)
-			''', (id_order, offer['datetime'], offer['meter_id'],
-				  offer['amount'], offer['value'], offer['type']))
+			''', (
+				id_order,
+				offer['datetime'],
+				offer['meter_id'],
+				round(offer['amount'], 3),
+				round(offer['value'], 3),
+				offer['type']
+			))
 
 		conn.commit()
 

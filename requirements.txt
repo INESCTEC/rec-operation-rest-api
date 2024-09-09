@@ -69,7 +69,7 @@ pytz==2024.1
 pywin32-ctypes==0.2.2
 PyYAML==6.0.1
 rapidfuzz==3.9.3
-rec-op-lem-prices @ git+https://gitlab.inesctec.pt/cpes/european-projects/enershare/rec_operation_and_lem_prices.git@96fff58f4d8a39f8d99954ecb8eb7acb1ebd4954
+rec-op-lem-prices @ git+https://gitlab.inesctec.pt/cpes/european-projects/enershare/rec_operation_and_lem_prices
 requests==2.32.2
 requests-toolbelt==1.0.0
 ruff==0.3.7

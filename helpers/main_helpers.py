@@ -213,13 +213,13 @@ def milp_inputs(
 					# }
 				},
 				'e_c': all_data_df.loc[
-					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['e_c'].to_list(),
+					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['e_c'].to_list(),
 				'e_g': all_data_df.loc[
-					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['e_g'].to_list(),
+					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['e_g'].to_list(),
 				'l_buy': all_data_df.loc[
-					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['buy_tariff'].to_list(),
+					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['buy_tariff'].to_list(),
 				'l_sell': all_data_df.loc[
-					all_data_df['meter_id'] == meter_ids[0]].sort_values(['datetime'])['sell_tariff'].to_list(),
+					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['sell_tariff'].to_list(),
 				'max_p': 100
 			}
 			for meter_id in meter_ids

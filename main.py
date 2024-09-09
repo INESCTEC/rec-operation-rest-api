@@ -5,6 +5,7 @@ from fastapi import (
 	FastAPI,
 	status
 )
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 
@@ -53,6 +54,15 @@ app = FastAPI(
 				'to determine the operational schedule of Battery Energy Storage System (BESS) assets '
 				'within a Renewable Energy Community (REC).',
 	version='0.2.0'
+)
+
+# To avoid CORS problem, where the UI makes an initial OPTIONS request
+app.add_middleware(
+   CORSMiddleware,
+   allow_origins=["http://localhost:5173",],
+   allow_credentials=True,
+   allow_methods=["*"],
+   allow_headers=["*"],
 )
 
 # Set up logging

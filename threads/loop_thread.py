@@ -117,7 +117,7 @@ def run_loop_thread(pricing_mechanism: str,
             ''', (
                 id_order,
                 dt,
-                lem_prices[idx]
+                round(lem_prices[idx], 3)
             ))
 
             if lem_organization == 'pool':
@@ -127,7 +127,7 @@ def run_loop_thread(pricing_mechanism: str,
                 ''', (
                     id_order,
                     dt,
-                    inputs['l_grid'][idx]
+                    round(inputs['l_grid'][idx], 3)
                 ))
             else:
                 for receiver_meter_id in meter_ids:
@@ -140,7 +140,7 @@ def run_loop_thread(pricing_mechanism: str,
                             ''', (
                                 id_order,
                                 dt,
-                                inputs['l_grid'][receiver_meter_id][provider_meter_id][idx],
+                                round(inputs['l_grid'][receiver_meter_id][provider_meter_id][idx], 3),
                                 provider_meter_id,
                                 receiver_meter_id
                             ))
@@ -154,10 +154,10 @@ def run_loop_thread(pricing_mechanism: str,
                     id_order,
                     meter_id,
                     dt,
-                    inputs['meters'][meter_id]['e_g'][idx],
-                    inputs['meters'][meter_id]['e_c'][idx],
-                    inputs['meters'][meter_id]['l_buy'][idx],
-                    inputs['meters'][meter_id]['l_sell'][idx],
+                    round(inputs['meters'][meter_id]['e_g'][idx], 3),
+                    round(inputs['meters'][meter_id]['e_c'][idx], 3),
+                    round(inputs['meters'][meter_id]['l_buy'][idx], 3),
+                    round(inputs['meters'][meter_id]['l_sell'][idx], 3),
                 ))
 
                 curs.execute('''
@@ -169,13 +169,15 @@ def run_loop_thread(pricing_mechanism: str,
                     id_order,
                     meter_id,
                     dt,
-                    results['e_sur_retail'][meter_id][idx],
-                    results['e_sup_retail'][meter_id][idx],
-                    results['e_cmet'][meter_id][idx],
-                    0 if not bool(results['e_bc'][meter_id]) else results['e_bc'][meter_id][f'storage_{meter_id}'][idx],
-                    0 if not bool(results['e_bd'][meter_id]) else results['e_bc'][meter_id][f'storage_{meter_id}'][idx],
-                    0 if not bool(results['e_bat'][meter_id]) else results['e_bc'][meter_id][f'storage_{meter_id}'][
-                        idx],
+                    round(results['e_sur_retail'][meter_id][idx], 3),
+                    round(results['e_sup_retail'][meter_id][idx], 3),
+                    round(results['e_cmet'][meter_id][idx], 3),
+                    0 if not bool(results['e_bc'][meter_id]) else round(
+                        results['e_bc'][meter_id][f'storage_{meter_id}'][idx], 3),
+                    0 if not bool(results['e_bd'][meter_id]) else round(
+                        results['e_bc'][meter_id][f'storage_{meter_id}'][idx], 3),
+                    0 if not bool(results['e_bat'][meter_id]) else round(
+                        results['e_bc'][meter_id][f'storage_{meter_id}'][idx], 3),
                 ))
 
                 if lem_organization == 'pool':
@@ -187,8 +189,8 @@ def run_loop_thread(pricing_mechanism: str,
                         id_order,
                         meter_id,
                         dt,
-                        results['e_pur_pool'][meter_id][idx],
-                        results['e_sale_pool'][meter_id][idx]
+                        round(results['e_pur_pool'][meter_id][idx], 3),
+                        round(results['e_sale_pool'][meter_id][idx], 3)
                     ))
                 else:
                     for provider_meter_id in meter_ids:
@@ -202,7 +204,7 @@ def run_loop_thread(pricing_mechanism: str,
                                 provider_meter_id,
                                 meter_id,
                                 dt,
-                                results['e_pur_bilateral'][meter_id][provider_meter_id][idx],
+                                round(results['e_pur_bilateral'][meter_id][provider_meter_id][idx], 3),
                             ))
 
         conn.commit()
