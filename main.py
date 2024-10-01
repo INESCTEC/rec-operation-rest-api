@@ -466,4 +466,8 @@ def loop_bilateral(order_id: str) -> BilateralMILPOutputs:
 
 if __name__ == '__main__':
 	import uvicorn
-	uvicorn.run(app, host="127.0.0.1", port=8000)
+	import os
+
+	host = os.getenv("PRICING_HOST", "127.0.0.1")
+	port = int(os.getenv("PRICING_PORT", 8000))
+	uvicorn.run(app, host=host, port=port)

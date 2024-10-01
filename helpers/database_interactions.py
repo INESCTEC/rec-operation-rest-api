@@ -8,7 +8,7 @@ def connect_to_sqlite_db() -> (sqlite3.Connection, sqlite3.Cursor):
     :return:
     """
     # Define the path to the database file
-    db_path = r'helpers/orders.db'
+    db_path = r'files/orders.db'
 
     # Connect to the SQLIte database
     # If the database doesn't exist, it will be created

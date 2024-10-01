@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import os
 import pandas as pd
 import pickle
 
@@ -181,7 +182,10 @@ def fetch_ceve(user_params: Union[UserParams, BaseUserParams])\
 	dataset_df = pd.DataFrame(dataset)
 
 	# load the local file with buying and selling tariffs per tariff cycle
-	with open(r'pickles\prices_and_tariffs.pkl', 'rb') as handle:
+	current_dir = os.path.dirname(os.path.abspath(__file__))
+	parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
+	pkl_file_path = os.path.join(parent_dir, 'pickles', 'prices_and_tariffs.pkl')
+	with open(pkl_file_path, 'rb') as handle:
 		tariffs_df = pickle.load(handle)
 
 	# parse all data
@@ -302,11 +306,15 @@ def fetch_sel(user_params: Union[UserParams, BaseUserParams]) \
 	logger.warning('- Failed to retrieve data through dataspace; trying to obtain data locally ...')
 
 	# read local parsed database
-	with open(r'pickles/sel_parsed_data.pkl', 'rb') as handle:
+	current_dir = os.path.dirname(os.path.abspath(__file__))
+	parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
+	pkl_file_path = os.path.join(parent_dir, 'pickles', 'sel_parsed_data.pkl')
+	with open(pkl_file_path, 'rb') as handle:
 		data_dict = pickle.load(handle)
 
 	# load the local file with buying and selling tariffs per tariff cycle
-	with open(r'pickles/prices_and_tariffs.pkl', 'rb') as handle:
+	pkl_file_path = os.path.join(parent_dir, 'pickles', 'prices_and_tariffs.pkl')
+	with open(pkl_file_path, 'rb') as handle:
 		tariffs_df = pickle.load(handle)
 	logger.info(f'- Successfully loaded SEL data from local pkl files.')
 

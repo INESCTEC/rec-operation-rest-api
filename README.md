@@ -34,3 +34,14 @@ $ uvicorn main:app
 To access the interactive API docs, include the following at the end of the URL where uvicorn is running: 
 - ```/docs``` (Swagger format);
 - ```/redoc``` (ReDoc format);
+
+# Docker
+A dockerfile and docker-compose.yml file have been prepared for and 
+easy deployment of the service on any server.
+
+On a server with docker engine, docker-compose and git installed:
+
+- clone this repository to the server;
+- create the ```.env``` file on the project's base directory
+- run the command ```docker-compose up -d --build``` (Windows) / 
+```sudo docker compose up -d --build``` (Linux)
