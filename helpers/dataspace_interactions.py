@@ -138,8 +138,8 @@ def fetch_ceve(user_params: Union[UserParams, BaseUserParams])\
 	for meter_id in meter_ids:
 		logger.info(f'- End User ID: {meter_id} ')
 		# validate meter_id provided
-		meter_info = CEVE_SHELLY_INFO.get(meter_id)
-		if meter_info is None:
+		meter_phase = CEVE_SHELLY_INFO.get(meter_id)
+		if meter_phase is None:
 			raise ValueError(f'{meter_id} is not a valid meter_id')
 		# initialize the meter's retrieved data
 		data = None
@@ -149,7 +149,7 @@ def fetch_ceve(user_params: Union[UserParams, BaseUserParams])\
 			# define the request parameters
 			params = {
 				'shelly_id': meter_id,
-				'phase': meter_info.get('phase'),
+				'phase': meter_phase,
 				'parameter': 'active_power',
 				'start_date': interval_start.strftime('%Y-%m-%dT%H:%M:%SZ'),
 				'end_date': interval_end.strftime('%Y-%m-%dT%H:%M:%SZ'),
