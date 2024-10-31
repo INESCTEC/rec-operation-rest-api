@@ -9,3 +9,7 @@ METADATA_BROKER_URL=insert_metadata_broker_url_here
 
 # SENTINEL TOKEN (http://vcpes08.inesctec.pt/)
 TOKEN=your_sentinel_token
+
+# SEL TOKEN
+SEL_EMAIL=your_sel_email
+SEL_PASS=your_sel_password

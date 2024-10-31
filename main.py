@@ -53,7 +53,7 @@ app = FastAPI(
 	description='A REST API designed to calculate the prices in a Local Energy Market (LEM) and '
 				'to determine the operational schedule of Battery Energy Storage System (BESS) assets '
 				'within a Renewable Energy Community (REC).',
-	version='0.2.0'
+	version='0.2.1'
 )
 
 # To avoid CORS problem, where the UI makes an initial OPTIONS request
@@ -143,7 +143,7 @@ def vanilla(order_id: str) -> VanillaOutputs:
 
 	# Fetch one row
 	order = app.state.cursor.fetchone()
-	order_type = order[4]
+	order_type = order[4] if order is not None else None
 	if order is not None and order_type == 'vanilla':
 		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
@@ -287,8 +287,8 @@ def dual(order_id: str) -> PoolMILPOutputs:
 
 	# Fetch one row
 	order = app.state.cursor.fetchone()
-	order_type = order[4]
-	lem_organization = order[5]
+	order_type = order[4] if order is not None else None
+	lem_organization = order[5] if order is not None else None
 	if order is not None and order_type == 'dual' and lem_organization == 'pool':
 		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
@@ -353,8 +353,8 @@ def loop_pool(order_id: str) -> PoolMILPOutputs:
 
 	# Fetch one row
 	order = app.state.cursor.fetchone()
-	order_type = order[4]
-	lem_organization = order[5]
+	order_type = order[4] if order is not None else None
+	lem_organization = order[5] if order is not None else None
 	if order is not None and order_type == 'loop' and lem_organization == 'pool':
 		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])
@@ -419,8 +419,8 @@ def loop_bilateral(order_id: str) -> BilateralMILPOutputs:
 
 	# Fetch one row
 	order = app.state.cursor.fetchone()
-	order_type = order[4]
-	lem_organization = order[5]
+	order_type = order[4] if order is not None else None
+	lem_organization = order[5] if order is not None else None
 	if order is not None and order_type == 'loop' and lem_organization == 'bilateral':
 		logger.info('Order ID found. Checking if order has already been processed.')
 		processed = bool(order[1])

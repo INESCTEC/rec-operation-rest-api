@@ -3,7 +3,7 @@
     "info": {
         "title": "Enershare - REC Operation and LEM pricing API",
         "description": "A REST API designed to calculate the prices in a Local Energy Market (LEM) and to determine the operational schedule of Battery Energy Storage System (BESS) assets within a Renewable Energy Community (REC).",
-        "version": "0.2.0"
+        "version": "0.2.1"
     },
     "paths": {
         "/vanilla/{pricing_mechanism}": {
