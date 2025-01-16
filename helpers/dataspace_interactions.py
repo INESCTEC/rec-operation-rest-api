@@ -11,10 +11,10 @@ from loguru import logger
 from tsg_client.controllers import TSGController
 from typing import Union
 
-from helpers.ceve_shelly_info import CEVE_SHELLY_INFO
+from helpers.indata_shelly_info import INDATA_SHELLY_INFO
 from helpers.sel_shelly_info import SEL_SHELLY_INFO
 from helpers.meter_tariff_cycles import (
-	CEVE_TARIFF_CYCLES,
+	INDATA_TARIFF_CYCLES,
 	SEL_TARIFF_CYCLES
 )
 from schemas.input_schemas import (
@@ -38,18 +38,18 @@ def fetch_dataspace(user_params: Union[UserParams, BaseUserParams]) \
 		and a dictionary listing all missing datetimes per meter ID
 	"""
 	dataset_origin = user_params.dataset_origin
-	if dataset_origin == 'CEVE':
-		return fetch_ceve(user_params)
+	if dataset_origin == 'IN-DATA':
+		return fetch_indata(user_params)
 	elif dataset_origin == 'SEL':
 		return fetch_sel(user_params)
 	else:
 		raise ValueError('Unidentified dataset_origin provided.')
 
 
-def fetch_ceve(user_params: Union[UserParams, BaseUserParams])\
+def fetch_indata(user_params: Union[UserParams, BaseUserParams])\
 		-> (pd.DataFrame, pd.Series, list[str], list[str], dict[str, list[str]]):
 	"""
-	Auxiliary function specific for fetching CEVE data.
+	Auxiliary function specific for fetching IN-DATA data.
 	:param user_params: class with all parameters passed by the user
 	:return: a pandas DataFrame with 6 columns: datetime, e_c, e_g, meter_id, buy_tariff and sell_tariff,
 		a pandas Series with the self-consumption tariffs applicable to the desired operation horizon,
@@ -141,7 +141,7 @@ def fetch_ceve(user_params: Union[UserParams, BaseUserParams])\
 	for meter_id in meter_ids:
 		logger.info(f'- End User ID: {meter_id} ')
 		# validate meter_id provided
-		meter_phase = CEVE_SHELLY_INFO.get(meter_id)
+		meter_phase = INDATA_SHELLY_INFO.get(meter_id)
 		if meter_phase is None:
 			raise ValueError(f'{meter_id} is not a valid meter_id')
 		# initialize the meter's retrieved data
@@ -243,7 +243,7 @@ def fetch_ceve(user_params: Union[UserParams, BaseUserParams])\
 			energy_df['meter_id'] = shelly_id
 			# add buy and sell tariffs' information
 			# - check the tariff type of the shelly_id (one of "simples", "bi-horárias", "tri-horárias")
-			tariff_type = CEVE_TARIFF_CYCLES[shelly_id]
+			tariff_type = INDATA_TARIFF_CYCLES[shelly_id]
 			# add buy and sell tariffs information for the meter_id
 			energy_df['buy_tariff'] = tariffs_df[tariff_type].loc[start_datetime:end_datetime]
 			# - obtain sell tariffs by considering 25% of the buy tariffs for the same period

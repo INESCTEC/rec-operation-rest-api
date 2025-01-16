@@ -1,4 +1,4 @@
-# Hardcoded information about the end users from SEL and CEVE.
+# Hardcoded information about the end users from SEL and IN-DATA.
 #
 # DESCRIPTION
 # {
@@ -42,7 +42,7 @@ SEL_TARIFF_CYCLES = {
 	'fbe599917f4d': 'simples'
 }
 
-CEVE_TARIFF_CYCLES = {
+INDATA_TARIFF_CYCLES = {
 	'0cb815fd4dec': 'simples',
 	'0cb815fd4bcc': 'bi-horárias',
 	'0cb815fc5350': 'tri-horárias',

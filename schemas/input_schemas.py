@@ -24,7 +24,7 @@ class BaseUserParams(BaseModel):
 	)
 	dataset_origin: DatasetOrigin = Field(
 		description='Dataset origin from which the meter IDs\' data is to be retrieved from. '
-					'Two options are provided:\n - SEL (Smart Energy Lab)\n - CEVE (Cooperativa Elétrica Vale d\'Este',
+					'Two options are provided:\n - SEL (Smart Energy Lab)\n - IN-DATA',
 		examples=['SEL']
 	)
 	meter_ids: Set[str] = Field(

@@ -1,4 +1,4 @@
-# Hardcoded information about the shelly IDs from CEVE.
+# Hardcoded information about the shelly IDs from IN-DATA.
 #
 # REGARDING CONSUMPTION
 # The user provides the main shelly ID that identifies a certain household. That shelly must always include the total
@@ -14,7 +14,7 @@
 # can we read the total liquid consumption
 
 
-CEVE_SHELLY_INFO = {
+INDATA_SHELLY_INFO = {
 	'0cb815fd4dec': 'total',
 	'0cb815fd4bcc': 'total',
 	'0cb815fc5350': 'a',
