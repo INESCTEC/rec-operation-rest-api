@@ -1,4 +1,4 @@
-# Hardcoded information about the end users from SEL and IN-DATA.
+# Hardcoded information about the end users from SEL and INDATA.
 #
 # DESCRIPTION
 # {

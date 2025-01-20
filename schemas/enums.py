@@ -13,7 +13,7 @@ class LemOrganization(str, Enum):
 
 
 class DatasetOrigin(str, Enum):
-	indata = 'IN-DATA'
+	indata = 'INDATA'
 	sel = 'SEL'
 
 

@@ -1,4 +1,4 @@
-# Hardcoded information about the shelly IDs from IN-DATA.
+# Hardcoded information about the shelly IDs from INDATA.
 #
 # REGARDING CONSUMPTION
 # The user provides the main shelly ID that identifies a certain household. That shelly must always include the total

@@ -38,7 +38,7 @@ def fetch_dataspace(user_params: Union[UserParams, BaseUserParams]) \
 		and a dictionary listing all missing datetimes per meter ID
 	"""
 	dataset_origin = user_params.dataset_origin
-	if dataset_origin == 'IN-DATA':
+	if dataset_origin == 'INDATA':
 		return fetch_indata(user_params)
 	elif dataset_origin == 'SEL':
 		return fetch_sel(user_params)
@@ -49,7 +49,7 @@ def fetch_dataspace(user_params: Union[UserParams, BaseUserParams]) \
 def fetch_indata(user_params: Union[UserParams, BaseUserParams])\
 		-> (pd.DataFrame, pd.Series, list[str], list[str], dict[str, list[str]]):
 	"""
-	Auxiliary function specific for fetching IN-DATA data.
+	Auxiliary function specific for fetching INDATA data.
 	:param user_params: class with all parameters passed by the user
 	:return: a pandas DataFrame with 6 columns: datetime, e_c, e_g, meter_id, buy_tariff and sell_tariff,
 		a pandas Series with the self-consumption tariffs applicable to the desired operation horizon,

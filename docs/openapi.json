@@ -506,7 +506,7 @@
                                 "$ref": "#/components/schemas/DatasetOrigin"
                             }
                         ],
-                        "description": "Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:\n - SEL (Smart Energy Lab)\n - IN-DATA",
+                        "description": "Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:\n - SEL (Smart Energy Lab)\n - INDATA",
                         "examples": [
                             "SEL"
                         ]
@@ -729,7 +729,7 @@
             "DatasetOrigin": {
                 "type": "string",
                 "enum": [
-                    "IN-DATA",
+                    "INDATA",
                     "SEL"
                 ],
                 "title": "DatasetOrigin"
@@ -1376,7 +1376,7 @@
                                 "$ref": "#/components/schemas/DatasetOrigin"
                             }
                         ],
-                        "description": "Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:\n - SEL (Smart Energy Lab)\n - IN-DATA",
+                        "description": "Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:\n - SEL (Smart Energy Lab)\n - INDATA",
                         "examples": [
                             "SEL"
                         ]
