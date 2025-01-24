@@ -13,13 +13,13 @@ from rec_op_lem_prices import (
 	vanilla_sdr
 )
 from schemas.enums import PricingMechanism
-from schemas.input_schemas import UserParams
+from schemas.input_schemas import VanillaUserParams
 
 logger.disable("rec_op_lem_prices")
 
 
 def run_vanilla_thread(pricing_mechanism: PricingMechanism,
-					   user_params: UserParams,
+					   user_params: VanillaUserParams,
 					   id_order: str,
 					   conn: sqlite3.Connection,
 					   curs: sqlite3.Cursor):

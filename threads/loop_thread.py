@@ -12,12 +12,12 @@ from rec_op_lem_prices.pricing_mechanisms_functions import (
     loop_pre_pool_mmr,
     loop_pre_pool_sdr
 )
-from schemas.input_schemas import UserParams
+from schemas.input_schemas import LoopUserParams
 
 
 def run_loop_thread(pricing_mechanism: str,
                     lem_organization: str,
-                    user_params: UserParams,
+                    user_params: LoopUserParams,
                     id_order: str,
                     conn: sqlite3.Connection,
                     curs: sqlite3.Cursor):
@@ -54,7 +54,7 @@ def run_loop_thread(pricing_mechanism: str,
 
         # prepare the inputs for the MILP
         logger.info('Building inputs.')
-        inputs = milp_inputs(data_df, sc_series, lem_organization)
+        inputs = milp_inputs(user_params, data_df, sc_series, lem_organization)
 
         # run optimization
         logger.info('Running MILP.')

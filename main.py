@@ -26,8 +26,9 @@ from schemas.enums import (
 	PricingMechanism
 )
 from schemas.input_schemas import (
-	BaseUserParams,
-	UserParams
+	DualUserParams,
+	LoopUserParams,
+	VanillaUserParams
 )
 from schemas.output_schemas import (
 	AcceptedResponse,
@@ -52,7 +53,13 @@ app = FastAPI(
 	title='Enershare - REC Operation and LEM pricing API',
 	description='A REST API designed to calculate the prices in a Local Energy Market (LEM) and '
 				'to determine the operational schedule of Battery Energy Storage System (BESS) assets '
-				'within a Renewable Energy Community (REC).',
+				'within a Renewable Energy Community (REC). The API uses data from two datasets within the '
+				'ENERSHARE project, Smart Energy Lab (SEL) and IN-DATA, namely real historical net load measurements '
+				'of several households that have agreed to share their data. Nonetheless, the  user can specify '
+				'additional PV capacity to each household, additional storage capacity and even additional "shared" '
+				'meters with their own PV and storage capacities, for simulation scenarios. Sensitive data, such as '
+				'the households geographical location and contracts with energy retailers, required for using this '
+				'tool, was fabricated and can be altered at will in the code of the API itself.',
 	version='0.2.1'
 )
 
@@ -92,10 +99,11 @@ def shutdown_event():
 		  description='Calculate an array of LEM prices using the selected pricing mechanism. <br />'
 					  'No Mixed Integer Linear Programming (MILP) is solved. '
 					  'The LEM offers are formulated solely on the basis of the meters’ historical or '
-					  'projected net consumption and their corresponding opportunity costs',
+					  'projected net consumption and their corresponding opportunity costs. Nonetheless, additional '
+					  'PV capacities per meter ID can be defined, for simulation purposes.',
           status_code=status.HTTP_202_ACCEPTED,
           tags=['Calculate LEM Prices'])
-def vanilla(pricing_mechanism: PricingMechanism, user_params: UserParams) -> AcceptedResponse:
+def vanilla(pricing_mechanism: PricingMechanism, user_params: VanillaUserParams) -> AcceptedResponse:
 	# generate an order ID for the user to fetch the results when ready
 	logger.info('Generating unique order ID.')
 	id_order = generate_order_id()
@@ -195,10 +203,12 @@ def vanilla(order_id: str) -> VanillaOutputs:
           description='Calculate an array of LEM prices and the operational schedule of the BESS assets '
 					  'by executing a purely collective MILP. <br />'
 					  'In this process, the shadow prices of a LEM equilibrium constraint are returned as the optimal '
-					  'LEM prices.',
+					  'LEM prices. <br />'
+					  'Additional PV and storage capacities, as well as additional "shared" meters can be defined for '
+					  'simulation purposes.',
           status_code=status.HTTP_202_ACCEPTED,
           tags=['Schedule operation and calculate LEM Prices'])
-def dual(user_params: BaseUserParams) -> AcceptedResponse:
+def dual(user_params: DualUserParams) -> AcceptedResponse:
 	# generate an order ID for the user to fetch the results when ready
 	logger.info('Generating unique order ID.')
 	id_order = generate_order_id()
@@ -228,12 +238,15 @@ def dual(user_params: BaseUserParams) -> AcceptedResponse:
 					  'In this process, successive two-stage MILP are solved until a specified stopping criterion '
 					  'is achieved. Each two-stage MILP procedure is executed with LEM prices that are calculated '
 					  'based on the user-defined pricing mechanism. '
-					  'The offers are formulated based on the net loads that result from the previously solved MILP.',
+					  'The offers are formulated based on the net loads that result '
+					  'from the previously solved MILP. <br />'
+					  'Additional PV and storage capacities, as well as additional "shared" meters can be defined for '
+					  'simulation purposes.',
           status_code=status.HTTP_202_ACCEPTED,
           tags=['Schedule operation and calculate LEM Prices'])
 def loop(pricing_mechanism: PricingMechanism,
 		 lem_organization: LemOrganization,
-		 user_params: UserParams) -> AcceptedResponse:
+		 user_params: LoopUserParams) -> AcceptedResponse:
 	# generate an order ID for the user to fetch the results when ready
 	logger.info('Generating unique order ID.')
 	id_order = generate_order_id()

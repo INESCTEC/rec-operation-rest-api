@@ -39,7 +39,8 @@ SEL_TARIFF_CYCLES = {
 	'f3c07b9293f7': 'simples',
 	'f4a53aae164a': 'bi-horárias',
 	'f4f44dd669e8': 'tri-horárias',
-	'fbe599917f4d': 'simples'
+	'fbe599917f4d': 'simples',
+	'shared': 'simples'
 }
 
 INDATA_TARIFF_CYCLES = {
@@ -62,5 +63,6 @@ INDATA_TARIFF_CYCLES = {
 	'0cb815fd534c': 'bi-horárias',
 	'34987a676138': 'tri-horárias',
 	'34987a675060': 'simples',
-	'0cb815fd49c4': 'bi-horárias'
+	'0cb815fd49c4': 'bi-horárias',
+	'shared': 'simples'
 }

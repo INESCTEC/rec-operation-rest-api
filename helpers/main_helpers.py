@@ -8,6 +8,10 @@ from typing import Union
 from rec_op_lem_prices.custom_types.pricing_mechanims_types import OffersList
 from rec_op_lem_prices.custom_types.stage_two_milp_pool_types import SinglePreBackpackS2PoolDict
 from schemas.enums import LemOrganization
+from schemas.input_schemas import (
+	DualUserParams,
+	LoopUserParams
+)
 from schemas.output_schemas import (
 	LemPrice,
 	Offer
@@ -53,6 +57,8 @@ def build_offers(all_data_df: pd.core.frame.DataFrame, datetime_range_str: list[
 	sellers_df = all_data_df.loc[all_data_df['net_load'] < 0]
 
 	# remove unnecessary columns
+	buyers_df.index.name = 'datetime'
+	sellers_df.index.name = 'datetime'
 	buyers_df.reset_index(inplace=True)
 	sellers_df.reset_index(inplace=True)
 	buyers_df = buyers_df[['datetime', 'meter_id', 'net_load', 'buy_tariff']]
@@ -172,20 +178,33 @@ def offers_return_structure(cursor: sqlite3.Cursor, order_id: str) -> list[LemPr
 
 
 def milp_inputs(
+		user_params: Union[DualUserParams, LoopUserParams],
 		all_data_df: pd.core.frame.DataFrame,
 		self_cons_tariffs_series: pd.core.series.Series,
 		lem_organization: LemOrganization) \
 		-> SinglePreBackpackS2PoolDict:
 	"""
 	Auxiliary function to build the inputs for post-delivery MILP functions
+	:param user_params: hyperparameters passed by the user
 	:param all_data_df: a pandas DataFrame with 6 columns: datetime, e_c, e_g, meter_id, buy_tariff and sell_tariff
 	:param self_cons_tariffs_series: a pandas Series with the self consumption tariffs
 	:param lem_organization: string indicating if LEM is organized in a "pool" or by "bilateral" transactions
 	:return: structure ready to run the desired MILP
 	"""
+	# list with all existing meter and shared meter IDs
 	meter_ids = all_data_df['meter_id'].unique()
+	all_data_df.index.name = 'datetime'
 	all_data_df.reset_index(inplace=True)
 	nr_time_steps = len(all_data_df['datetime'].unique())
+
+	# create a single structure with all contracted powers provided by the user for shared and existing meters;
+	# this works because by default, any of these structures when not provided default to an empty list
+	meter_contracted_power = user_params.meter_contracted_power
+	meter_contracted_power.extend(user_params.shared_meter_contracted_power)
+
+	# create a single structure with all storage parameters provided by the user for shared and existing meters
+	meter_storage = user_params.meter_storage
+	meter_storage.extend(user_params.shared_meter_storage)
 
 	# pool market organization - self-consumption tariffs are the same for all transactions
 	if lem_organization == 'pool':
@@ -197,33 +216,9 @@ def milp_inputs(
 					   for provider_meter_id in meter_ids if provider_meter_id != receiver_meter_id}
 				  for receiver_meter_id in meter_ids}
 
+	# initialize the inputs structure "backpack" with all parameters that are not dependent on meters or share meters
 	backpack = {
-		'meters': {
-			meter_id: {
-				'btm_storage': {
-					# f'storage_{meter_id}': {
-					# 	'degradation_cost': 0.01,
-					# 	'e_bn': 5.0,
-					# 	'eff_bc': 1.0,
-					# 	'eff_bd': 1.0,
-					# 	'init_e': 0.0,
-					# 	'p_max': 5.0,
-					# 	'soc_max': 100.0,
-					# 	'soc_min': 0.0
-					# }
-				},
-				'e_c': all_data_df.loc[
-					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['e_c'].to_list(),
-				'e_g': all_data_df.loc[
-					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['e_g'].to_list(),
-				'l_buy': all_data_df.loc[
-					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['buy_tariff'].to_list(),
-				'l_sell': all_data_df.loc[
-					all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['sell_tariff'].to_list(),
-				'max_p': 100
-			}
-			for meter_id in meter_ids
-		},
+		'meters': {},
 		'delta_t': 0.25,
 		'horizon': nr_time_steps * 0.25,
 		'l_extra': 10,
@@ -234,6 +229,42 @@ def milp_inputs(
 		'strict_pos_coeffs': True,
 		'sum_one_coeffs': True
 	}
+
+	# create a substructure with data and parameters for each meter and shared meter in the "backpack" structure
+	for meter_id in meter_ids:
+		# check if contracted power was provided for the meter ID, if not assume default value
+		cp_position = next((idx for (idx, d) in enumerate(meter_contracted_power) if d.meter_id == meter_id), None)
+		contracted_power = meter_contracted_power[cp_position].contracted_power if cp_position is not None else 41.4
+
+		# check if storage was provided for the meter ID, if not assume default value
+		storage = {}
+		s_position = next((idx for (idx, d) in enumerate(meter_storage) if d.meter_id == meter_id), None)
+		storage_struct = meter_storage[s_position] if s_position is not None else None
+		if storage_struct is not None:
+			storage[f'storage_{meter_id}'] = {
+				'degradation_cost': storage_struct.deg_cost,
+				'e_bn': storage_struct.e_bn,
+				'eff_bc': storage_struct.eff_bc / 100,
+				'eff_bd': storage_struct.eff_bd / 100,
+				'init_e': 0.0,
+				'p_max': storage_struct.p_max,
+				'soc_max': storage_struct.soc_max,
+				'soc_min': storage_struct.soc_min
+			}
+
+		# complete the "backpack" structure with each meter and shared meter paramters and data
+		backpack['meters'][meter_id] = {
+			'btm_storage': storage,
+			'max_p': contracted_power,
+			'e_c': all_data_df.loc[
+				all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['e_c'].to_list(),
+			'e_g': all_data_df.loc[
+				all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['e_g'].to_list(),
+			'l_buy': all_data_df.loc[
+				all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['buy_tariff'].to_list(),
+			'l_sell': all_data_df.loc[
+				all_data_df['meter_id'] == meter_id].sort_values(['datetime'])['sell_tariff'].to_list()
+		}
 
 	return backpack
 

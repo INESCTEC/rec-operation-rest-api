@@ -5,10 +5,10 @@ from loguru import logger
 from helpers.dataspace_interactions import fetch_dataspace
 from helpers.main_helpers import milp_inputs
 from rec_op_lem_prices.optimization_functions import run_pre_single_stage_collective_pool_milp
-from schemas.input_schemas import BaseUserParams
+from schemas.input_schemas import DualUserParams
 
 
-def run_dual_thread(user_params: BaseUserParams,
+def run_dual_thread(user_params: DualUserParams,
 					id_order: str,
 					conn: sqlite3.Connection,
 					curs: sqlite3.Cursor):
@@ -44,7 +44,7 @@ def run_dual_thread(user_params: BaseUserParams,
 
 		# prepare the inputs for the MILP
 		logger.info('Building inputs.')
-		inputs = milp_inputs(data_df, sc_series, 'pool')
+		inputs = milp_inputs(user_params, data_df, sc_series, 'pool')
 
 		# run optimization
 		logger.info('Running MILP.')
