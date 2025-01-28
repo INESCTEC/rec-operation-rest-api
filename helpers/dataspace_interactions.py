@@ -541,6 +541,9 @@ def fetch_sel(user_params: Union[VanillaUserParams, BaseUserParams]) \
 			else:
 				data.extend(curr_data)
 
+		# in case the provided meter_ids are not part of the dataset, data is None and must be
+		if data is None:
+			data = []
 		dataset.extend(data)
 	# convert the current dataset to a pandas dataframe
 	dataset_df = pd.DataFrame(dataset)

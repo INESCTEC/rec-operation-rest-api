@@ -36,7 +36,6 @@ def shared_meter_id_not_found(smi, values):
 class MeterID(BaseModel):
 	meter_id: str = Field(
 		description='The string that unequivocally identifies the meter.',
-		examples=['Meter#X']
 	)
 
 
@@ -44,7 +43,6 @@ class InstalledPVCapacity(MeterID):
 	installed_pv_capacity: float = Field(
 		ge=0.0,
 		description='Installed PV capacity that will overrule the original PV capacity of the meter, in kVA.',
-		examples=[5.0]
 	)
 
 
@@ -52,41 +50,34 @@ class Storage(MeterID):
 	e_bn: float = Field(
 		ge=0.0,
 		description='Storage\'s energy capacity, in kWh.',
-		examples=[5.0]
 	)
 	p_max: float = Field(
 		ge=0.0,
 		description='Storage\'s maximum power rate (for charge and discharge), in kW.',
-		examples=[5.0]
 	)
 	soc_min: float = Field(
 		ge=0.0,
 		le=100.0,
 		description='Minimum state-of-charge to consider for the storage asset, in %.',
-		examples=[0.0]
 	)
 	soc_max: float = Field(
 		ge=0.0,
 		le=100.0,
 		description='Maximum state-of-charge to consider for the storage asset, in %.',
-		examples=[100.0]
 	)
 	eff_bc: float = Field(
 		ge=0.0,
 		le=100.0,
 		description='Charging efficiency of the storage asset, in %.',
-		examples=[100.0]
 	)
 	eff_bd: float = Field(
 		ge=0.0,
 		le=100.0,
 		description='Discharging efficiency of the storage asset, in %.',
-		examples=[100.0]
 	)
 	deg_cost: float = Field(
 		ge=0.0,
 		description='Degradation cost of the storage asset, in %.',
-		examples=[0.01]
 	)
 
 	@field_validator('soc_max')
@@ -100,7 +91,6 @@ class ContractedPower(MeterID):
 	contracted_power: float = Field(
 		ge=0.0,
 		description='Contracted power at the meter, in kVA.',
-		examples=[6.9]
 	)
 
 
@@ -134,12 +124,16 @@ class BaseUserParams(BaseModel):
 					'If this field or any specific structure regarding a meter ID defined in the '
 					'"meter_ids" field is not provided, the original PV capacities of the missing meters will be '
 					'considered.',
+		examples=[[{
+			'meter_id': 'Meter#1',
+			'installed_pv_capacity': 5.0
+		}]]
 	)
 	shared_meter_ids: Optional[Set[str]] = Field(
 		default=[],
 		description='An array of strings that unequivocally identifies the new shared meters to be included '
 					'in the REC.',
-		examples=[('Meter#3', 'Meter#4')]
+		examples=[('SharedMeter#1', 'SharedMeter#2')]
 	)
 	shared_meter_installed_pv_capacities: Optional[list[InstalledPVCapacity]] = Field(
 		default=[],
@@ -148,6 +142,10 @@ class BaseUserParams(BaseModel):
 					'If this field or any specific structure regarding a shared meter ID defined in the '
 					'"shared_meter_ids" field is not provided, no PV capacity will be considered for the '
 					'missing meters.',
+		examples=[[{
+			'meter_id': 'SharedMeter#1',
+			'installed_pv_capacity': 5.0
+		}]]
 	)
 
 	@field_validator('start_datetime')
@@ -204,6 +202,16 @@ class MILPBaseUserParams(BaseUserParams):
 					'If this field or any specific structure regarding a meter ID defined in the '
 					'"meter_ids" field is not provided, no storage capacities for the missing meters will be '
 					'considered.',
+		examples=[[{
+			'meter_id': 'Meter#1',
+			'e_bn': 5.0,
+			'p_max': 5.0,
+			'soc_min': 0.0,
+			'soc_max': 100.0,
+			'eff_bc': 100.0,
+			'eff_bd': 100.0,
+			'deg_cost': 0.01
+		}]]
 	)
 	shared_meter_storage: Optional[list[Storage]] = Field(
 		default=[],
@@ -212,6 +220,16 @@ class MILPBaseUserParams(BaseUserParams):
 					'If this field or any specific structure regarding a meter ID defined in the '
 					'"shared_meter_ids" field is not provided, no storage capacities for the missing meters will be '
 					'considered.',
+		examples=[[{
+			'meter_id': 'SharedMeter#1',
+			'e_bn': 5.0,
+			'p_max': 5.0,
+			'soc_min': 0.0,
+			'soc_max': 100.0,
+			'eff_bc': 100.0,
+			'eff_bd': 100.0,
+			'deg_cost': 0.01
+		}]]
 	)
 	meter_contracted_power: Optional[list[ContractedPower]] = Field(
 		default=[],
@@ -220,6 +238,10 @@ class MILPBaseUserParams(BaseUserParams):
 					'If this field or any specific structure regarding a meter ID defined in the '
 					'"meter_ids" field is not provided, a default value equal to the maximum possible '
 					'contracted power in BTN (low voltage) will be considered: 41.4 kVA.',
+		examples=[[{
+			'meter_id': 'Meter#1',
+			'contracted_power': 6.9
+		}]]
 	)
 	shared_meter_contracted_power: Optional[list[ContractedPower]] = Field(
 		default=[],
@@ -228,6 +250,10 @@ class MILPBaseUserParams(BaseUserParams):
 					'If this field or any specific structure regarding a meter ID defined in the '
 					'"shared_meter_ids" field is not provided, a default value equal to the maximum possible '
 					'contracted power in BTN (low voltage) will be considered: 41.4 kVA.',
+		examples=[[{
+			'meter_id': 'SharedMeter#1',
+			'contracted_power': 6.9
+		}]]
 	)
 
 	@field_validator('meter_storage')
