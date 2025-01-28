@@ -45,3 +45,16 @@ On a server with docker engine, docker-compose and git installed:
 - create the ```.env``` file on the project's base directory
 - run the command ```docker-compose up -d --build``` (Windows) / 
 ```sudo docker compose up -d --build``` (Linux)
+
+# Notes about hardcoded information
+This API is specifically designed for interacting with the rec_operation library (https://github.com/INESCTEC/rec-operation) 
+within the context of the ENERSHARE project. Several configurations required to describe the two REC within the project, 
+SEL and IN-DATA are hardcoded. Given the sensitive nature of those static parameters, which includes the geographic 
+location of the REC meters and the contracts celebrated with their respective retailers, the hardcoded values are 
+fictitious. Such information can, nonetheless be edited in the following scripts:
+- ```/helpers/indata_shelly_info.py``` ----- required configurations for requesting data from IN-DATA connector
+- ```/helpers/meter_installed_pv.py``` ----- meters' installed PV capacity, in kWp
+- ```/helpers/meter_locations.py``` -------- both RECs' geographic location, provided as latitude and longitude coordinates
+- ```/helpers/meter_tariff_cycles.py``` ---- meters' contracted fixed tariff cycle, from ("simples", "bi-horárias", 
+"tri-horárias")
+- ```/helpers/sel_shelly_info.py``` -------- required configurations for requesting data from SEL connector
