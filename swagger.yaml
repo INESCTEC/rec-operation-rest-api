@@ -1,15 +1,15 @@
 openapi: 3.1.0
 info:
   title: Enershare - REC Operation and LEM pricing API
-  description: A REST API designed to calculate the prices in a Local Energy Market (LEM) and to determine the operational schedule of Battery Energy Storage System (BESS) assets within a Renewable Energy Community (REC).
-  version: 0.2.0
+  description: A REST API designed to calculate the prices in a Local Energy Market (LEM) and to determine the operational schedule of Battery Energy Storage System (BESS) assets within a Renewable Energy Community (REC). The API uses data from two datasets within the ENERSHARE project, Smart Energy Lab (SEL) and IN-DATA, namely real historical net load measurements of several households that have agreed to share their data. Nonetheless, the  user can specify additional PV capacity to each household, additional storage capacity and even additional "shared" meters with their own PV and storage capacities, for simulation scenarios. Sensitive data, such as the households geographical location and contracts with energy retailers, required for using this tool, was fabricated and can be altered at will in the code of the API itself.
+  version: 0.2.1
 paths:
   /vanilla/{pricing_mechanism}:
     post:
       tags:
         - Calculate LEM Prices
       summary: Vanilla
-      description: Calculate an array of LEM prices using the selected pricing mechanism. <br />No Mixed Integer Linear Programming (MILP) is solved. The LEM offers are formulated solely on the basis of the meters’ historical or projected net consumption and their corresponding opportunity costs
+      description: Calculate an array of LEM prices using the selected pricing mechanism. <br />No Mixed Integer Linear Programming (MILP) is solved. The LEM offers are formulated solely on the basis of the meters’ historical or projected net consumption and their corresponding opportunity costs. Nonetheless, additional PV capacities per meter ID can be defined, for simulation purposes.
       operationId: vanilla_vanilla__pricing_mechanism__post
       parameters:
         - name: pricing_mechanism
@@ -22,7 +22,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserParams'
+              $ref: '#/components/schemas/VanillaUserParams'
       responses:
         '202':
           description: Successful Response
@@ -86,13 +86,13 @@ paths:
       tags:
         - Schedule operation and calculate LEM Prices
       summary: Dual
-      description: Calculate an array of LEM prices and the operational schedule of the BESS assets by executing a purely collective MILP. <br />In this process, the shadow prices of a LEM equilibrium constraint are returned as the optimal LEM prices.
+      description: Calculate an array of LEM prices and the operational schedule of the BESS assets by executing a purely collective MILP. <br />In this process, the shadow prices of a LEM equilibrium constraint are returned as the optimal LEM prices. <br />Additional PV and storage capacities, as well as additional "shared" meters can be defined for simulation purposes.
       operationId: dual_dual_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseUserParams'
+              $ref: '#/components/schemas/DualUserParams'
         required: true
       responses:
         '202':
@@ -112,7 +112,7 @@ paths:
       tags:
         - Schedule operation and calculate LEM Prices
       summary: Loop
-      description: Calculate an array of LEM prices and the operational schedule of the BESS assets by implementing an iterative algorithm. <br />In this process, successive two-stage MILP are solved until a specified stopping criterion is achieved. Each two-stage MILP procedure is executed with LEM prices that are calculated based on the user-defined pricing mechanism. The offers are formulated based on the net loads that result from the previously solved MILP.
+      description: Calculate an array of LEM prices and the operational schedule of the BESS assets by implementing an iterative algorithm. <br />In this process, successive two-stage MILP are solved until a specified stopping criterion is achieved. Each two-stage MILP procedure is executed with LEM prices that are calculated based on the user-defined pricing mechanism. The offers are formulated based on the net loads that result from the previously solved MILP. <br />Additional PV and storage capacities, as well as additional "shared" meters can be defined for simulation purposes.
       operationId: loop_loop__lem_organization___pricing_mechanism__post
       parameters:
         - name: pricing_mechanism
@@ -130,7 +130,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserParams'
+              $ref: '#/components/schemas/LoopUserParams'
       responses:
         '202':
           description: Successful Response
@@ -299,48 +299,6 @@ components:
         - message
         - order_id
       title: AcceptedResponse
-    BaseUserParams:
-      properties:
-        start_datetime:
-          type: string
-          format: date-time
-          title: Start Datetime
-          description: Start datetime for the price calculation horizon (included in it) in ISO 8601 format.
-          examples:
-            - '2024-05-16T00:00:00Z'
-        end_datetime:
-          type: string
-          format: date-time
-          title: End Datetime
-          description: End datetime for the price calculation horizon (included in it) in ISO 8601 format.
-          examples:
-            - '2024-05-16T00:45:00Z'
-        dataset_origin:
-          allOf:
-            - $ref: '#/components/schemas/DatasetOrigin'
-          description: |-
-            Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:
-             - SEL (Smart Energy Lab)
-             - CEVE (Cooperativa Elétrica Vale d'Este
-          examples:
-            - SEL
-        meter_ids:
-          items:
-            type: string
-          type: array
-          uniqueItems: true
-          title: Meter Ids
-          description: An array of strings that unequivocally identifies the meters to be included in the REC. <br />All registered assets (i.e., meter ids) belonging totally or partially to the meters listed, will be considered in the following computations.
-          examples:
-            - - Meter#1
-              - Meter#2
-      type: object
-      required:
-        - start_datetime
-        - end_datetime
-        - dataset_origin
-        - meter_ids
-      title: BaseUserParams
     BilateralLEMTransactions:
       properties:
         provider_meter_id:
@@ -392,8 +350,7 @@ components:
           examples:
             - 5
         milp_status:
-          allOf:
-            - $ref: '#/components/schemas/MILPStatus'
+          $ref: '#/components/schemas/MILPStatus'
           description: Indicates if the MILP was optimally solved (by returning "Optimal") or if an issue was raised and a successful solution was not achieved (by returning "Infeasible" or "Unbounded").
         total_rec_cost:
           type: number
@@ -484,12 +441,166 @@ components:
         - receiver_meter_id
         - self_consumption_tariff
       title: BilateralSelfConsumptionTariffsPerDatetime
+    ContractedPower:
+      properties:
+        meter_id:
+          type: string
+          title: Meter Id
+          description: The string that unequivocally identifies the meter.
+        contracted_power:
+          type: number
+          minimum: 0
+          title: Contracted Power
+          description: Contracted power at the meter, in kVA.
+      type: object
+      required:
+        - meter_id
+        - contracted_power
+      title: ContractedPower
     DatasetOrigin:
       type: string
       enum:
-        - CEVE
+        - INDATA
         - SEL
       title: DatasetOrigin
+    DualUserParams:
+      properties:
+        start_datetime:
+          type: string
+          format: date-time
+          title: Start Datetime
+          description: Start datetime for the price calculation horizon (included in it) in ISO 8601 format.
+          examples:
+            - '2024-05-16T00:00:00Z'
+        end_datetime:
+          type: string
+          format: date-time
+          title: End Datetime
+          description: End datetime for the price calculation horizon (included in it) in ISO 8601 format.
+          examples:
+            - '2024-05-16T00:45:00Z'
+        dataset_origin:
+          $ref: '#/components/schemas/DatasetOrigin'
+          description: |-
+            Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:
+             - SEL (Smart Energy Lab)
+             - INDATA
+          examples:
+            - SEL
+        meter_ids:
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+          title: Meter Ids
+          description: An array of strings that unequivocally identifies the meters to be included in the REC. <br />All registered assets (i.e., meter ids) belonging totally or partially to the meters listed, will be considered in the following computations.
+          examples:
+            - - Meter#1
+              - Meter#2
+        meter_installed_pv_capacities:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/InstalledPVCapacity'
+              type: array
+            - type: 'null'
+          title: Meter Installed Pv Capacities
+          description: Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, the original PV capacities of the missing meters will be considered.
+          default: []
+          examples:
+            - - installed_pv_capacity: 5
+                meter_id: Meter#1
+        shared_meter_ids:
+          anyOf:
+            - items:
+                type: string
+              type: array
+              uniqueItems: true
+            - type: 'null'
+          title: Shared Meter Ids
+          description: An array of strings that unequivocally identifies the new shared meters to be included in the REC.
+          default: []
+          examples:
+            - - SharedMeter#1
+              - SharedMeter#2
+        shared_meter_installed_pv_capacities:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/InstalledPVCapacity'
+              type: array
+            - type: 'null'
+          title: Shared Meter Installed Pv Capacities
+          description: Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a shared meter ID defined in the "shared_meter_ids" field is not provided, no PV capacity will be considered for the missing meters.
+          default: []
+          examples:
+            - - installed_pv_capacity: 5
+                meter_id: SharedMeter#1
+        meter_storage:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/Storage'
+              type: array
+            - type: 'null'
+          title: Meter Storage
+          description: Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, no storage capacities for the missing meters will be considered.
+          default: []
+          examples:
+            - - deg_cost: 0.01
+                e_bn: 5
+                eff_bc: 100
+                eff_bd: 100
+                meter_id: Meter#1
+                p_max: 5
+                soc_max: 100
+                soc_min: 0
+        shared_meter_storage:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/Storage'
+              type: array
+            - type: 'null'
+          title: Shared Meter Storage
+          description: Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "shared_meter_ids" field is not provided, no storage capacities for the missing meters will be considered.
+          default: []
+          examples:
+            - - deg_cost: 0.01
+                e_bn: 5
+                eff_bc: 100
+                eff_bd: 100
+                meter_id: SharedMeter#1
+                p_max: 5
+                soc_max: 100
+                soc_min: 0
+        meter_contracted_power:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/ContractedPower'
+              type: array
+            - type: 'null'
+          title: Meter Contracted Power
+          description: 'Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, a default value equal to the maximum possible contracted power in BTN (low voltage) will be considered: 41.4 kVA.'
+          default: []
+          examples:
+            - - contracted_power: 6.9
+                meter_id: Meter#1
+        shared_meter_contracted_power:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/ContractedPower'
+              type: array
+            - type: 'null'
+          title: Shared Meter Contracted Power
+          description: 'Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "shared_meter_ids" field is not provided, a default value equal to the maximum possible contracted power in BTN (low voltage) will be considered: 41.4 kVA.'
+          default: []
+          examples:
+            - - contracted_power: 6.9
+                meter_id: SharedMeter#1
+      type: object
+      required:
+        - start_datetime
+        - end_datetime
+        - dataset_origin
+        - meter_ids
+      title: DualUserParams
     HTTPValidationError:
       properties:
         detail:
@@ -566,6 +677,22 @@ components:
         - buy_tariff
         - sell_tariff
       title: InputsPerMeterAndDatetime
+    InstalledPVCapacity:
+      properties:
+        meter_id:
+          type: string
+          title: Meter Id
+          description: The string that unequivocally identifies the meter.
+        installed_pv_capacity:
+          type: number
+          minimum: 0
+          title: Installed Pv Capacity
+          description: Installed PV capacity that will overrule the original PV capacity of the meter, in kVA.
+      type: object
+      required:
+        - meter_id
+        - installed_pv_capacity
+      title: InstalledPVCapacity
     LemOrganization:
       type: string
       enum:
@@ -591,6 +718,161 @@ components:
         - datetime
         - value
       title: LemPrice
+    LoopUserParams:
+      properties:
+        sdr_compensation:
+          anyOf:
+            - type: number
+              maximum: 1
+              minimum: 0
+            - type: 'null'
+          title: Sdr Compensation
+          description: Only considered when choosing "sdr" as the pricing mechanism. <br />Defines a compensation between 0.0 and 1.0 allowing the user to set an incentive for internal trades whenever the REC has a net surplus.
+          default: 0
+        mmr_divisor:
+          anyOf:
+            - type: integer
+              exclusiveMinimum: 0
+            - type: 'null'
+          title: Mmr Divisor
+          description: Only considered when choosing "mmr" as the pricing mechanism. <br />Defines the divisor considered on the MMR expression. Values greater than 2 will favor buyers and values smaller than 2 will favor sellers.
+          default: 2
+        start_datetime:
+          type: string
+          format: date-time
+          title: Start Datetime
+          description: Start datetime for the price calculation horizon (included in it) in ISO 8601 format.
+          examples:
+            - '2024-05-16T00:00:00Z'
+        end_datetime:
+          type: string
+          format: date-time
+          title: End Datetime
+          description: End datetime for the price calculation horizon (included in it) in ISO 8601 format.
+          examples:
+            - '2024-05-16T00:45:00Z'
+        dataset_origin:
+          $ref: '#/components/schemas/DatasetOrigin'
+          description: |-
+            Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:
+             - SEL (Smart Energy Lab)
+             - INDATA
+          examples:
+            - SEL
+        meter_ids:
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+          title: Meter Ids
+          description: An array of strings that unequivocally identifies the meters to be included in the REC. <br />All registered assets (i.e., meter ids) belonging totally or partially to the meters listed, will be considered in the following computations.
+          examples:
+            - - Meter#1
+              - Meter#2
+        meter_installed_pv_capacities:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/InstalledPVCapacity'
+              type: array
+            - type: 'null'
+          title: Meter Installed Pv Capacities
+          description: Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, the original PV capacities of the missing meters will be considered.
+          default: []
+          examples:
+            - - installed_pv_capacity: 5
+                meter_id: Meter#1
+        shared_meter_ids:
+          anyOf:
+            - items:
+                type: string
+              type: array
+              uniqueItems: true
+            - type: 'null'
+          title: Shared Meter Ids
+          description: An array of strings that unequivocally identifies the new shared meters to be included in the REC.
+          default: []
+          examples:
+            - - SharedMeter#1
+              - SharedMeter#2
+        shared_meter_installed_pv_capacities:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/InstalledPVCapacity'
+              type: array
+            - type: 'null'
+          title: Shared Meter Installed Pv Capacities
+          description: Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a shared meter ID defined in the "shared_meter_ids" field is not provided, no PV capacity will be considered for the missing meters.
+          default: []
+          examples:
+            - - installed_pv_capacity: 5
+                meter_id: SharedMeter#1
+        meter_storage:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/Storage'
+              type: array
+            - type: 'null'
+          title: Meter Storage
+          description: Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, no storage capacities for the missing meters will be considered.
+          default: []
+          examples:
+            - - deg_cost: 0.01
+                e_bn: 5
+                eff_bc: 100
+                eff_bd: 100
+                meter_id: Meter#1
+                p_max: 5
+                soc_max: 100
+                soc_min: 0
+        shared_meter_storage:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/Storage'
+              type: array
+            - type: 'null'
+          title: Shared Meter Storage
+          description: Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "shared_meter_ids" field is not provided, no storage capacities for the missing meters will be considered.
+          default: []
+          examples:
+            - - deg_cost: 0.01
+                e_bn: 5
+                eff_bc: 100
+                eff_bd: 100
+                meter_id: SharedMeter#1
+                p_max: 5
+                soc_max: 100
+                soc_min: 0
+        meter_contracted_power:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/ContractedPower'
+              type: array
+            - type: 'null'
+          title: Meter Contracted Power
+          description: 'Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, a default value equal to the maximum possible contracted power in BTN (low voltage) will be considered: 41.4 kVA.'
+          default: []
+          examples:
+            - - contracted_power: 6.9
+                meter_id: Meter#1
+        shared_meter_contracted_power:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/ContractedPower'
+              type: array
+            - type: 'null'
+          title: Shared Meter Contracted Power
+          description: 'Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "shared_meter_ids" field is not provided, a default value equal to the maximum possible contracted power in BTN (low voltage) will be considered: 41.4 kVA.'
+          default: []
+          examples:
+            - - contracted_power: 6.9
+                meter_id: SharedMeter#1
+      type: object
+      required:
+        - start_datetime
+        - end_datetime
+        - dataset_origin
+        - meter_ids
+      title: LoopUserParams
     MILPStatus:
       type: string
       enum:
@@ -654,8 +936,7 @@ components:
           title: Value
           description: Price offered in the session, in €/kwh.
         type:
-          allOf:
-            - $ref: '#/components/schemas/OfferType'
+          $ref: '#/components/schemas/OfferType'
           description: Indicates if it is a buying or selling offer.
       type: object
       required:
@@ -831,8 +1112,7 @@ components:
           examples:
             - 5
         milp_status:
-          allOf:
-            - $ref: '#/components/schemas/MILPStatus'
+          $ref: '#/components/schemas/MILPStatus'
           description: Indicates if the MILP was optimally solved (by returning "Optimal") or if an issue was raised and a successful solution was not achieved (by returning "Infeasible" or "Unbounded").
         total_rec_cost:
           type: number
@@ -916,6 +1196,62 @@ components:
         - mmr
         - sdr
       title: PricingMechanism
+    Storage:
+      properties:
+        meter_id:
+          type: string
+          title: Meter Id
+          description: The string that unequivocally identifies the meter.
+        e_bn:
+          type: number
+          minimum: 0
+          title: E Bn
+          description: Storage's energy capacity, in kWh.
+        p_max:
+          type: number
+          minimum: 0
+          title: P Max
+          description: Storage's maximum power rate (for charge and discharge), in kW.
+        soc_min:
+          type: number
+          maximum: 100
+          minimum: 0
+          title: Soc Min
+          description: Minimum state-of-charge to consider for the storage asset, in %.
+        soc_max:
+          type: number
+          maximum: 100
+          minimum: 0
+          title: Soc Max
+          description: Maximum state-of-charge to consider for the storage asset, in %.
+        eff_bc:
+          type: number
+          maximum: 100
+          minimum: 0
+          title: Eff Bc
+          description: Charging efficiency of the storage asset, in %.
+        eff_bd:
+          type: number
+          maximum: 100
+          minimum: 0
+          title: Eff Bd
+          description: Discharging efficiency of the storage asset, in %.
+        deg_cost:
+          type: number
+          minimum: 0
+          title: Deg Cost
+          description: Degradation cost of the storage asset, in %.
+      type: object
+      required:
+        - meter_id
+        - e_bn
+        - p_max
+        - soc_min
+        - soc_max
+        - eff_bc
+        - eff_bd
+        - deg_cost
+      title: Storage
     TimeseriesDataNotFound:
       properties:
         message:
@@ -949,65 +1285,6 @@ components:
         - missing_data_points
         - order_id
       title: TimeseriesDataNotFound
-    UserParams:
-      properties:
-        start_datetime:
-          type: string
-          format: date-time
-          title: Start Datetime
-          description: Start datetime for the price calculation horizon (included in it) in ISO 8601 format.
-          examples:
-            - '2024-05-16T00:00:00Z'
-        end_datetime:
-          type: string
-          format: date-time
-          title: End Datetime
-          description: End datetime for the price calculation horizon (included in it) in ISO 8601 format.
-          examples:
-            - '2024-05-16T00:45:00Z'
-        dataset_origin:
-          allOf:
-            - $ref: '#/components/schemas/DatasetOrigin'
-          description: |-
-            Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:
-             - SEL (Smart Energy Lab)
-             - CEVE (Cooperativa Elétrica Vale d'Este
-          examples:
-            - SEL
-        meter_ids:
-          items:
-            type: string
-          type: array
-          uniqueItems: true
-          title: Meter Ids
-          description: An array of strings that unequivocally identifies the meters to be included in the REC. <br />All registered assets (i.e., meter ids) belonging totally or partially to the meters listed, will be considered in the following computations.
-          examples:
-            - - Meter#1
-              - Meter#2
-        sdr_compensation:
-          anyOf:
-            - type: number
-              maximum: 1
-              minimum: 0
-            - type: 'null'
-          title: Sdr Compensation
-          description: Only considered when choosing "sdr" as the pricing mechanism. <br />Defines a compensation between 0.0 and 1.0 allowing the user to set an incentive for internal trades whenever the REC has a net surplus.
-          default: 0
-        mmr_divisor:
-          anyOf:
-            - type: integer
-              exclusiveMinimum: 0
-            - type: 'null'
-          title: Mmr Divisor
-          description: Only considered when choosing "mmr" as the pricing mechanism. <br />Defines the divisor considered on the MMR expression. Values greater than 2 will favor buyers and values smaller than 2 will favor sellers.
-          default: 2
-      type: object
-      required:
-        - start_datetime
-        - end_datetime
-        - dataset_origin
-        - meter_ids
-      title: UserParams
     ValidationError:
       properties:
         loc:
@@ -1057,3 +1334,98 @@ components:
         - lem_prices
         - offers
       title: VanillaOutputs
+    VanillaUserParams:
+      properties:
+        sdr_compensation:
+          anyOf:
+            - type: number
+              maximum: 1
+              minimum: 0
+            - type: 'null'
+          title: Sdr Compensation
+          description: Only considered when choosing "sdr" as the pricing mechanism. <br />Defines a compensation between 0.0 and 1.0 allowing the user to set an incentive for internal trades whenever the REC has a net surplus.
+          default: 0
+        mmr_divisor:
+          anyOf:
+            - type: integer
+              exclusiveMinimum: 0
+            - type: 'null'
+          title: Mmr Divisor
+          description: Only considered when choosing "mmr" as the pricing mechanism. <br />Defines the divisor considered on the MMR expression. Values greater than 2 will favor buyers and values smaller than 2 will favor sellers.
+          default: 2
+        start_datetime:
+          type: string
+          format: date-time
+          title: Start Datetime
+          description: Start datetime for the price calculation horizon (included in it) in ISO 8601 format.
+          examples:
+            - '2024-05-16T00:00:00Z'
+        end_datetime:
+          type: string
+          format: date-time
+          title: End Datetime
+          description: End datetime for the price calculation horizon (included in it) in ISO 8601 format.
+          examples:
+            - '2024-05-16T00:45:00Z'
+        dataset_origin:
+          $ref: '#/components/schemas/DatasetOrigin'
+          description: |-
+            Dataset origin from which the meter IDs' data is to be retrieved from. Two options are provided:
+             - SEL (Smart Energy Lab)
+             - INDATA
+          examples:
+            - SEL
+        meter_ids:
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+          title: Meter Ids
+          description: An array of strings that unequivocally identifies the meters to be included in the REC. <br />All registered assets (i.e., meter ids) belonging totally or partially to the meters listed, will be considered in the following computations.
+          examples:
+            - - Meter#1
+              - Meter#2
+        meter_installed_pv_capacities:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/InstalledPVCapacity'
+              type: array
+            - type: 'null'
+          title: Meter Installed Pv Capacities
+          description: Defines, for the list of meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a meter ID defined in the "meter_ids" field is not provided, the original PV capacities of the missing meters will be considered.
+          default: []
+          examples:
+            - - installed_pv_capacity: 5
+                meter_id: Meter#1
+        shared_meter_ids:
+          anyOf:
+            - items:
+                type: string
+              type: array
+              uniqueItems: true
+            - type: 'null'
+          title: Shared Meter Ids
+          description: An array of strings that unequivocally identifies the new shared meters to be included in the REC.
+          default: []
+          examples:
+            - - SharedMeter#1
+              - SharedMeter#2
+        shared_meter_installed_pv_capacities:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/InstalledPVCapacity'
+              type: array
+            - type: 'null'
+          title: Shared Meter Installed Pv Capacities
+          description: Defines, for the list of shared meters provided, what are the installed PV capacities to be considered.  <br />If this field or any specific structure regarding a shared meter ID defined in the "shared_meter_ids" field is not provided, no PV capacity will be considered for the missing meters.
+          default: []
+          examples:
+            - - installed_pv_capacity: 5
+                meter_id: SharedMeter#1
+      type: object
+      required:
+        - start_datetime
+        - end_datetime
+        - dataset_origin
+        - meter_ids
+      title: VanillaUserParams
