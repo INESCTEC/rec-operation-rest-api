@@ -15,7 +15,8 @@ This REST API provides endpoints for the **optimal scheduling of REC controllabl
 **optimal LEM prices and transactions** under the *Enershare* project.
 
 
-> **_NOTE:_** This software is on active development and depends on an extra Python Library (which will be uploaded soon to this GitHub Organization).
+> **_NOTE:_** This software is on active development and depends on an extra Python Library 
+> (https://github.com/INESCTEC/rec-operation).
 
 
 ## Developers // Contacts:
