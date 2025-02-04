@@ -531,6 +531,10 @@ def fetch_sel(user_params: Union[VanillaUserParams, BaseUserParams]) \
 				curr_data = curr_data[sub_sensor_id]
 			if curr_data is None:
 				curr_data = []
+			# to avoid any missing information at sel_shelly_info.py, regarding sub_sensor_id
+			if type(curr_data) is dict:
+				real_sub_sensor_id = list(curr_data.keys())[0]
+				curr_data = curr_data[real_sub_sensor_id]
 			# include information about the meter_id and the sensor
 			for datapoint in curr_data:
 				datapoint['meter_id'] = meter_id
