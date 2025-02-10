@@ -568,7 +568,6 @@ def fetch_sel(user_params: Union[VanillaUserParams, BaseUserParams]) \
 		dataset_df['datetime'] = pd.to_datetime(dataset_df['datetime'], utc=True)
 		# pivot the table to get two energy columns (one for consumption and other for generation)
 		dataset_df = dataset_df.pivot_table(values='energy', index=['meter_id', 'datetime'], columns=['sensor'])
-		dataset_df.index -= timedelta(minutes=1)
 		dataset_df.reset_index(inplace=True)
 		# re-order and re-index the dataframe
 		dataset_df.sort_values(['meter_id', 'datetime'], inplace=True)
