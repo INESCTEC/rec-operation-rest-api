@@ -1,5 +1,5 @@
-# use a Python 3.12 image
-FROM python:3.12
+# use a Python 3.10 image
+FROM python:3.10
 
 # Install dependencies
 RUN apt-get update && apt-get install -y build-essential python3-dev git nano
