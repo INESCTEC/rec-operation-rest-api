@@ -619,7 +619,7 @@ def fetch_sel(user_params: Union[VanillaUserParams, BaseUserParams]) \
 			energy_df = interpol_df.loc[start_datetime:end_datetime].copy()
 			# check if the meter has PV, if not, and if new installed capacity is to be considered,
 			# fetch the expected generation from PVGIS;
-			if not SEL_PV_INFO[shelly_id] == 0:
+			if SEL_PV_INFO[shelly_id] == 0:
 				energy_df['e_g'] = pvgis_df['e_g']
 			# else normalize the e_g values by the initial installed capacity
 			# to obtain a generation profile between 0 and 1
